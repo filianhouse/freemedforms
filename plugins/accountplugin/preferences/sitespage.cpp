@@ -176,7 +176,6 @@ SitesWidget::SitesWidget(QWidget *parent) :
     m_Mapper->toFirst();
     ui->wpComboBox->setModel(m_Model);
     ui->wpComboBox->setModelColumn(AccountDB::Constants::SITES_NAME);
-    //hash of towns and zipcode
 
     setDataToUi();
 }
@@ -184,28 +183,7 @@ SitesWidget::SitesWidget(QWidget *parent) :
 SitesWidget::~SitesWidget()
 {
     delete ui;
-    //saveModel();
 }
-
-//void SitesWidget::fillHugeWidgets(){
-//    QStringList listOfZipcodes;
-//    listOfZipcodes  = m_hashTownZip.keys();
-//    listOfZipcodes.removeDuplicates();
-//    listOfZipcodes.sort();
-//    QLocale local;
-//    QString localCountry;
-//    localCountry = QLocale::countryToString(local.country());
-//    if (WarnDebugMessage)
-//        qDebug() << __FILE__ << QString::number(__LINE__) << " country =" << localCountry ;
-//    QStringList listForCountry;
-//    listForCountry = listOfCountries();
-//    listForCountry.sort();
-//    listForCountry.prepend(localCountry);
-
-//    zipComboBox->addItems(listOfZipcodes);
-
-//    countryComboBox->addItems(listForCountry);
-//}
 
 void SitesWidget::setDataToUi()
 {
@@ -214,7 +192,7 @@ void SitesWidget::setDataToUi()
     m_Mapper->setCurrentIndex(ui->wpComboBox->currentIndex());
 }
 
-void SitesWidget::saveModel()
+/*void SitesWidget::saveModel()
 {
     if (WarnDebugMessage)
         qDebug() << __FILE__ << QString::number(__LINE__) << " currentIndex =" << QString::number(m_Mapper->currentIndex());
@@ -234,7 +212,7 @@ void SitesWidget::saveModel()
     }
     if (WarnDebugMessage)
         qDebug() << __FILE__ << QString::number(__LINE__) << " site error =" << m_Model->lastError().text();
-}
+}*/
 
 void SitesWidget::on_wpComboBox_currentIndexChanged(int index)
 {
@@ -245,19 +223,11 @@ void SitesWidget::on_wpComboBox_currentIndexChanged(int index)
 
 void SitesWidget::on_addButton_clicked()
 {
-    if (WarnDebugMessage)
-        qDebug() << __FILE__ << QString::number(__LINE__) << " rowCount1 =" << QString::number(m_Model->rowCount());
     if (!m_Model->insertRow(m_Model->rowCount()))
         LOG_ERROR("Unable to add row");
-    if (WarnDebugMessage)
-        qDebug() << __FILE__ << QString::number(__LINE__) << " rowCount2 =" << QString::number(m_Model->rowCount());
     ui->wpComboBox->setCurrentIndex(m_Model->rowCount()-1);
     m_siteUidLabel->setValue(calcSitesUid());
     m_siteUidLabel->setFocus();
-    if (WarnDebugMessage) {
-        qDebug() << __FILE__ << QString::number(__LINE__) << " m_siteUidLabel =" << m_siteUidLabel->text();
-        qDebug() << __FILE__ << QString::number(__LINE__) << " currentIndex =" << QString::number(m_Mapper->currentIndex());
-    }
 }
 
 void SitesWidget::on_deleteButton_clicked()
@@ -381,10 +351,6 @@ int SitesWidget::calcSitesUid()
         qWarning() << __FILE__ << QString::number(__LINE__) << "index is not valid" ;
     }
     int siteUidBefore = m_Model->data(index,Qt::DisplayRole).toInt();
-    if (WarnDebugMessage)
-        qDebug() << __FILE__ << QString::number(__LINE__) << " siteUidBefore =" << QString::number(siteUidBefore) ;
     int siteUid =  siteUidBefore + 1;
-    if (WarnDebugMessage)
-        qDebug() << __FILE__ << QString::number(__LINE__) << " siteUid =" << QString::number(siteUid);
     return siteUid;
 }

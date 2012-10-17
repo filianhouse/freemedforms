@@ -34,22 +34,22 @@
 
 #include <accountbaseplugin/accountbase_exporter.h>
 
-#include <QAbstractTableModel>
+#include <QSqlTableModel>
 #include <QSqlError>
 
 namespace AccountDB {
-namespace Internal {
+/*namespace Internal {
 class WorkingPlacesModelPrivate;
-}
+}*/
 
-class ACCOUNTBASE_EXPORT WorkingPlacesModel : public QAbstractTableModel
+class ACCOUNTBASE_EXPORT WorkingPlacesModel : public QSqlTableModel
 {
   
 public:
-    WorkingPlacesModel(QObject *parent);
+    WorkingPlacesModel(QObject *parent = 0);
     ~WorkingPlacesModel();
 
-    int rowCount(const QModelIndex &parent = QModelIndex()) const;
+/*    int rowCount(const QModelIndex &parent = QModelIndex()) const;
     int columnCount(const QModelIndex &parent = QModelIndex()) const;
 //    bool hasChildren(const QModelIndex &parent = QModelIndex()) const;
 
@@ -64,22 +64,22 @@ public:
     void setFilter(const QString & filter);
 
     bool insertRows(int row, int count, const QModelIndex &parent = QModelIndex());
-    bool removeRows(int row, int count, const QModelIndex &parent = QModelIndex());
+    bool removeRows(int row, int count, const QModelIndex &parent = QModelIndex());*/
 
     bool insertRow(int arow, const QModelIndex &aparent = QModelIndex())        { return insertRows(arow, 1, aparent); }
     bool insertColumn(int acolumn, const QModelIndex &aparent = QModelIndex())  { return insertColumns(acolumn, 1, aparent); }
     bool removeRow(int arow, const QModelIndex &aparent = QModelIndex())        { return removeRows(arow, 1, aparent); }
     bool removeColumn(int acolumn, const QModelIndex &aparent = QModelIndex())  { return removeColumns(acolumn, 1, aparent); }
 
-    bool isDirty() const;
+//    bool isDirty() const;
     QSqlError lastError();
     
-public Q_SLOTS:
+/*public Q_SLOTS:
     bool submit();
     void revert();
 
 private:
-    Internal::WorkingPlacesModelPrivate *d;
+    Internal::WorkingPlacesModelPrivate *d;*/
 };
 
 }  // End namespace AccountDB

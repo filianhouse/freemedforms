@@ -34,10 +34,6 @@
 #include "accountbase.h"
 
 #include <translationutils/constanttranslations.h>
-
-#include <QAbstractTableModel>
-#include <QSqlTableModel>
-
 #include <QDebug>
 
 enum { WarnDebugMessage = false };
@@ -47,8 +43,8 @@ using namespace AccountDB;
 using namespace Trans::ConstantTranslations;
 
 
-namespace AccountDB {
-namespace Internal {
+//{
+/*namespace Internal {
 class WorkingPlacesModelPrivate
 {
 public:
@@ -63,43 +59,39 @@ public:
 public:
     QSqlTableModel *m_SqlTable;
 
-
 private:
     WorkingPlacesModel *q;
 };
-}
-}
+}*/
+//}
 
 
 
 WorkingPlacesModel::WorkingPlacesModel(QObject *parent) :
-        QAbstractTableModel(parent), d(new Internal::WorkingPlacesModelPrivate(this))
+        QSqlTableModel(parent,QSqlDatabase::database(Constants::DB_ACCOUNTANCY))
 {
-    d->m_SqlTable->setEditStrategy(QSqlTableModel::OnFieldChange);
-    d->m_SqlTable->select();
+    setTable(AccountBase::instance()->table(Constants::Table_Sites));
+    setEditStrategy(QSqlTableModel::OnFieldChange);
+    select();
 }
 
 WorkingPlacesModel::~WorkingPlacesModel()
 {
-    if (d) {
-        delete d;
-        d=0;
-    }
 }
 
 
-int WorkingPlacesModel::rowCount(const QModelIndex &parent) const
+/*int WorkingPlacesModel::rowCount(const QModelIndex &parent) const
 {
     int rows = 0;
-    d->m_SqlTable->setFilter("");
-    d->m_SqlTable->select();
-    rows = d->m_SqlTable->rowCount(parent);
+    setFilter("");
+    select();
+    rows = rowCount(parent);
     return rows;
 }
 
 int WorkingPlacesModel::columnCount(const QModelIndex &parent) const
 {
-    return d->m_SqlTable->columnCount(parent);
+    return columnCount(parent);
 }
 
 
@@ -109,14 +101,14 @@ QVariant WorkingPlacesModel::data(const QModelIndex &index, int role) const
        return QVariant();
     }
     if (role == Qt::DisplayRole || role == Qt::EditRole) {
-        return d->m_SqlTable->data(index, role);
+        return data(index, role);
     }
     return QVariant();
 }
 
 bool WorkingPlacesModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
-    return d->m_SqlTable->setData(index, value, role);
+    return setData(index, value, role);
 }
 
 
@@ -130,13 +122,13 @@ QVariant WorkingPlacesModel::headerData(int section, Qt::Orientation orientation
 
 bool WorkingPlacesModel::insertRows(int row, int count, const QModelIndex &parent)
 {
-      bool ret = d->m_SqlTable->insertRows(row, count, parent);
+      bool ret = insertRows(row, count, parent);
       return ret;
 }
 
 bool WorkingPlacesModel::removeRows(int row, int count, const QModelIndex &parent)
 {
-    return d->m_SqlTable->removeRows(row, count, parent);
+    return removeRows(row, count, parent);
 }
 
 bool WorkingPlacesModel::isDirty() const
@@ -146,7 +138,7 @@ bool WorkingPlacesModel::isDirty() const
 
 bool WorkingPlacesModel::submit()
 {
-    if (d->m_SqlTable->submitAll()) {
+    if (submitAll()) {
         return true;
     }
     return false;
@@ -154,16 +146,17 @@ bool WorkingPlacesModel::submit()
 
 void  WorkingPlacesModel::revert()
 {
-    d->m_SqlTable->revert();
-}
+    revert();
+}*/
 
-QSqlError WorkingPlacesModel::lastError(){
-    return d->m_SqlTable->lastError();
-}
-
-void WorkingPlacesModel::setFilter(const QString & filter)
+QSqlError WorkingPlacesModel::lastError()
 {
-    d->m_SqlTable->setFilter(filter);
-    d->m_SqlTable->select();
+    return lastError();
 }
+
+/*void WorkingPlacesModel::setFilter(const QString & filter)
+{
+    setFilter(filter);
+    select();
+}*/
 
