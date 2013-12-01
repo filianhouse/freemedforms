@@ -53,7 +53,7 @@ const QString MACBUNDLE = "/../../../";
 const QString MACBUNDLE = "";
 #endif
 
-const char * const  TR_CONTEXT = "DDI";
+const char * const TR_CONTEXT = "DDI";
 
 const char * const CATEGORY_FREEDRUGSDATABASE = QT_TRANSLATE_NOOP("FreeTools", "Free drugs databases");
 
@@ -71,6 +71,11 @@ const char * const MODE_DDI = "mDDI";
 const char * const MODE_PIM = "mPIM";
 const char * const MODE_PREGNANCY = "mPregnancy";
 const char * const MODE_SERVERMANAGER = "mServerManager";
+
+const char * const ICON_DDIMODE = "drugengine_ddi.png";
+const char * const ICON_INTERACTORSMODE = "drugengines.png";
+const char * const ICON_ATCMODE = "drug_infos.png";
+const char * const ICON_SERVERMODE = "network.png";
 
 // For internal use only
 const char * const SQL_ISNULL = "=''";
