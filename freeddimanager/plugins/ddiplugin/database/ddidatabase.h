@@ -68,6 +68,7 @@ public:
     int insertDrugInteractorsDataFromXml(const QString &fileName);
     int insertDrugDrugInteractionDataFromXml(const QString &fileName);
     int insertRoutesDataFromCsvRawFile(const QString &fileName);
+    int insertComponentAtcLinkageFromXml(const QString &fileName);
 
 private:
     bool createDatabase(const QString &connectionName , const QString &prefixedDbName,
