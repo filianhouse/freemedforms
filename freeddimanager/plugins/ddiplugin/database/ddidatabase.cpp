@@ -515,6 +515,34 @@ QString DDIDatabase::interactorLabel(const QString &uid, const QString &lang) co
     return toReturn;
 }
 
+QStringList DDIDatabase::availableComponentDrugsDatabaseUids() const
+{
+    QStringList list;
+    QSqlDatabase DB = QSqlDatabase::database(connectionName());
+    if (!connectDatabase(DB, __FILE__, __LINE__))
+        return list;
+
+    QString req = selectDistinct(Constants::Table_COMPONENTS, QList<int>()
+                                 << Constants::COMPO_DRUGDB_UID1
+                                 << Constants::COMPO_DRUGDB_UID2,
+                                 QHash<int, QString>());
+    DB.transaction();
+    QSqlQuery query(DB);
+    if (query.exec(req)) {
+        while (query.next()) {
+            if (!query.value(1).toString().isEmpty())
+                list << QString("%1 - %2").arg(query.value(0).toString()).arg(query.value(1).toString());
+            else
+                list << query.value(0).toString();
+        }
+    } else {
+        LOG_QUERY_ERROR_FOR("DDIDatabase", query);
+    }
+    query.finish();
+    DB.commit();
+    return list;
+}
+
 /**
  * Read the raw CSV ATC file and populate the database with its data.
  * Returns the number of ATC codes inserted. \n

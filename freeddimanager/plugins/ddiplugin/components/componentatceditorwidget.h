@@ -19,63 +19,56 @@
  *  If not, see <http://www.gnu.org/licenses/>.                            *
  ***************************************************************************/
 /***************************************************************************
- *  Main Developer: Eric MAEKER, <eric.maeker@gmail.com>                   *
+ *  Main Developer: Eric MAEKER, MD <eric.maeker@gmail.com>                *
  *  Contributors:                                                          *
  *       NAME <MAIL@ADDRESS.COM>                                           *
+ *       NAME <MAIL@ADDRESS.COM>                                           *
  ***************************************************************************/
-#ifndef DDIMANAGER_DDIPLUGIN_H
-#define DDIMANAGER_DDIPLUGIN_H
+#ifndef DDIMANAGER_DDIPLUGIN_COMPONENTATCEDITORWIDGET_H
+#define DDIMANAGER_DDIPLUGIN_COMPONENTATCEDITORWIDGET_H
 
-#include <extensionsystem/iplugin.h>
+#include <QWidget>
 
 /**
- * \file ddiplugin.h
+ * \file componentatceditorwidget.h
  * \author Eric Maeker
  * \version 0.10.0
- * \date 09 Oct 2013
+ * \date 05 Dec 2013
 */
 
 namespace DDI {
 namespace Internal {
-class AtcMode;
-class InteractorMode;
-class DDIMode;
-class ServerManagerMode;
-class ComponentAtcMode;
+class ComponentAtcEditorWidgetPrivate;
 
-class DDIPlugin : public ExtensionSystem::IPlugin
+class ComponentAtcEditorWidget : public QWidget
 {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID "org.freemedforms.FreeDDIManager.DDIManagerPlugin" FILE "DDIManager.json")
 
 public:
-    DDIPlugin();
-    ~DDIPlugin();
+    explicit ComponentAtcEditorWidget(QWidget *parent = 0);
+    ~ComponentAtcEditorWidget();
 
-    bool initialize(const QStringList &arguments, QString *errorMessage = 0);
-    void extensionsInitialized();
+//    void processCSVFile();
 
-    ExtensionSystem::IPlugin::ShutdownFlag aboutToShutdown();
+protected Q_SLOTS:
+    void changeDatabase(const int index);
+    void activated(const QModelIndex &index);
+    void pressed(const QModelIndex &index);
+    void onRemoveUnreviewedRequested();
+
+protected:
+    void changeEvent(QEvent *e);
 
 #ifdef WITH_TESTS
-private Q_SLOTS:
-    void initTestCase();
-    void test_atcWidget();
-    void test_drugInteractor();
-    void test_drugInteractorWidget();
-    void test_drugDrugInteractionWidget();
-    void cleanTestCase();
+public Q_SLOTS:
+    void test_runAllTests();
 #endif
 
 private:
-    AtcMode *_atcMode;
-    InteractorMode *_interactorMode;
-    DDIMode *_ddiMode;
-    ServerManagerMode *_serverMode;
-    ComponentAtcMode *_componentAtcMode;
+    ComponentAtcEditorWidgetPrivate *d;
 };
 
 } // namespace Internal
 } // namespace DDI
 
-#endif // DDIMANAGER_DDIPLUGIN_H
+#endif // DDIMANAGER_DDIPLUGIN_COMPONENTATCEDITORWIDGET_H

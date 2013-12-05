@@ -56,12 +56,15 @@ public:
     // ATC
     bool isAtcCodeExists(const QString &code) const;
     bool isAtcUidExists(const QString &code) const;
-    QString atcLabelForCode(const QString &code, const QString &lang) const;
+    QString atcLabelForCode(const QString &code, const QString &lang = QString::null) const;
     bool createAtcItem(const QString &code, const QString &uid);
 
     // INTERACTORS
     QStringList interactorDistinctUids() const;
     QString interactorLabel(const QString &uid, const QString &lang = QString::null) const;
+
+    // COMPONENT ATC LINK
+    QStringList availableComponentDrugsDatabaseUids() const;
 
     // OLD DATA INSERTION
     int insertAtcDataFromCsv(const QString &fileName);

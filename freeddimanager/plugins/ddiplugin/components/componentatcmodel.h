@@ -24,87 +24,81 @@
  *       NAME <MAIL@ADDRESS.COM>                                           *
  *       NAME <MAIL@ADDRESS.COM>                                           *
  ***************************************************************************/
-#ifndef FREEDDIMANAGER_ATCTABLEMODEL_H
-#define FREEDDIMANAGER_ATCTABLEMODEL_H
+#ifndef DDIMANAGER_DDIPLUGIN_INTERNAL_COMPONENT_TO_ATC_MODEL_H
+#define DDIMANAGER_DDIPLUGIN_INTERNAL_COMPONENT_TO_ATC_MODEL_H
 
-#include <ddiplugin/ddi_exporter.h>
 #include <QAbstractTableModel>
+#include <QMultiHash>
+#include <QHash>
+#include <QString>
 
 /**
- * \file atctablemodel.h
- * \author Eric MAEKER
+ * \file componentatcmodel.h
+ * \author Eric Maeker
  * \version 0.10.0
- * \date 09 Oct 2013
+ * \date 02 Dec 2013
 */
 
 namespace DDI {
 class DDICore;
 namespace Internal {
-class AtcTableModelPrivate;
-}
+class ComponentAtcModelPrivate;
+}  // namespace Internal
 
-class DDI_EXPORT AtcTableModel : public QAbstractTableModel
+class ComponentAtcModel : public QAbstractTableModel
 {
     Q_OBJECT
-    friend class DDI::Internal::AtcTableModelPrivate;
     friend class DDI::DDICore;
 
 protected:
-    AtcTableModel(QObject * parent = 0);
+    explicit ComponentAtcModel(QObject *parent = 0);
     bool initialize();
 
 public:
     enum DataRepresentation {
-        Id = 0,
-        IsValid,
-        Code,
+        FancyButton = 0,
+        Id,
         Uid,
-        LabelFr,
-        LabelEn,
-        LabelDe,
-        LabelSp,
+        DrugDatabaseComponentUid1,
+        DrugDatabaseComponentUid2,
+        IsValid,
+        IsReviewed,
+        Name,
+        AtcCodeList,
+        SuggestedAtcCodeList,
         DateCreation,
         DateUpdate,
-        PreviousCode,
-        WhoUpdateYear,
-        Comment,
+        Reviewer,
+        Comments,
         ColumnCount
     };
-    ~AtcTableModel();
+    ~ComponentAtcModel();
 
-    virtual int rowCount(const QModelIndex &parent = QModelIndex()) const;
-    virtual int columnCount(const QModelIndex &parent = QModelIndex()) const;
+    QStringList availableDrugsDatabases() const;
+    bool selectDatabase(const QString &dbUid, const QString &dbUid2 = QString::null);
 
-    virtual void fetchMore(const QModelIndex &parent);
-    virtual bool canFetchMore(const QModelIndex &parent) const;
+    int rowCount(const QModelIndex &parent = QModelIndex()) const;
+    int columnCount(const QModelIndex &parent = QModelIndex()) const;
 
-    virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const ;
-    virtual bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole);
-
-    virtual QVariant headerData(int section, Qt::Orientation orientation,
-                                int role = Qt::DisplayRole) const;
-//    virtual bool setHeaderData(int section, Qt::Orientation orientation, const QVariant &value,
-//                               int role = Qt::EditRole);
+    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
+    bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole);
 
     Qt::ItemFlags flags(const QModelIndex &index) const;
+//    QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const;
 
-//    virtual bool insertRows(int row, int count, const QModelIndex &parent = QModelIndex());
-//    virtual bool insertColumns(int column, int count, const QModelIndex &parent = QModelIndex());
-//    virtual bool removeRows(int row, int count, const QModelIndex &parent = QModelIndex());
-//    virtual bool removeColumns(int column, int count, const QModelIndex &parent = QModelIndex());
+    bool addUnreviewedMolecules(const QString &dbUid, const QStringList &molecules);
+    bool addAutoFoundMolecules(const QMultiHash<QString, QString> &mol_atc, bool removeFromModel = false);
 
-    bool isCodeExists(const QString &code) const;
-    bool isUidExists(const QString &uid) const;
-    bool createAtcCode(const QString &code, const QString &uid);
+    // bool moleculeLinker(Internal::MoleculeLinkData *data);
 
 public Q_SLOTS:
-    bool submit();
+    void setActualReviewer(const QString &name);
+    int removeUnreviewedMolecules();
 
 private:
-    static AtcTableModel *_instance;
-    Internal::AtcTableModelPrivate *d;
+    Internal::ComponentAtcModelPrivate *d;
 };
 
-}  //  End namespace DDI
+}  //  End namespace DrugsDbCreator
 
-#endif // FREEDDIMANAGER_ATCTABLEMODEL_H
+#endif // DDIMANAGER_DDIPLUGIN_INTERNAL_COMPONENT_TO_ATC_MODEL_H

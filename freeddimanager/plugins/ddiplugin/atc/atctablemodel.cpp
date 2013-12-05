@@ -87,10 +87,13 @@ AtcTableModel::AtcTableModel(QObject *parent) :
     QAbstractTableModel(parent),
     d(new AtcTableModelPrivate(this))
 {
+    setObjectName("AtcTableModel");
     d->_sql = new QSqlTableModel(this, ddiBase().database());
     d->_sql->setTable(ddiBase().table(Constants::Table_ATC));
     d->_sql->setEditStrategy(QSqlTableModel::OnManualSubmit);
     d->_sql->setSort(Constants::ATC_CODE, Qt::AscendingOrder);
+
+    // FIXME: do not connect all signals !
     Utils::linkSignalsFromFirstModelToSecondModel(d->_sql, this, true);
 }
 
@@ -111,9 +114,9 @@ int AtcTableModel::rowCount(const QModelIndex &parent) const
     return d->_sql->rowCount(parent);
 }
 
-int AtcTableModel::columnCount(const QModelIndex &parent) const
+int AtcTableModel::columnCount(const QModelIndex &) const
 {
-    return d->_sql->columnCount(parent);
+    return ColumnCount;
 }
 
 void AtcTableModel::fetchMore(const QModelIndex &parent)

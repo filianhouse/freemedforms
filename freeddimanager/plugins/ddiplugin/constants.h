@@ -72,11 +72,13 @@ const char * const MODE_DDI = "mDDI";
 const char * const MODE_PIM = "mPIM";
 const char * const MODE_PREGNANCY = "mPregnancy";
 const char * const MODE_SERVERMANAGER = "mServerManager";
+const char * const MODE_COMPONENTATC = "mComponentAtc";
 
 const char * const ICON_DDIMODE = "drugengine_ddi.png";
 const char * const ICON_INTERACTORSMODE = "drugengines.png";
 const char * const ICON_ATCMODE = "drug_infos.png";
 const char * const ICON_SERVERMODE = "network.png";
+const char * const ICON_COMPONENTATC = "molecule.png";
 
 // For internal use only
 const char * const SQL_ISNULL = "=''";
