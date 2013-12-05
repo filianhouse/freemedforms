@@ -1389,10 +1389,16 @@ QString Database::select(const int &tableref, const QList<int> &fieldsref, const
     if (tmp.isEmpty())
         return QString::null;
     tmp.chop(2);
-    toReturn = QString("SELECT %1 FROM `%2` WHERE %3")
-            .arg(tmp)
-            .arg(table(tableref))
-            .arg(getWhereClause(tableref, conditions));
+    if (!conditions.isEmpty()) {
+        toReturn = QString("SELECT %1 FROM `%2` WHERE %3")
+                .arg(tmp)
+                .arg(table(tableref))
+                .arg(getWhereClause(tableref, conditions));
+    } else {
+        toReturn = QString("SELECT %1 FROM `%2`")
+                .arg(tmp)
+                .arg(table(tableref));
+    }
     if (WarnSqlCommands)
         qWarning() << toReturn;
     return toReturn;
@@ -1474,7 +1480,13 @@ QString Database::select(const int &tableref) const
 */
 QString Database::selectDistinct(const int &tableref, const QList<int> &fields, const QHash<int, QString> &conditions) const
 {
-    return select(tableref, fields, conditions).replace("SELECT", "SELECT DISTINCT").replace("SELECT DISTINCT DISTINCT", "SELECT DISTINCT");
+    QString toReturn = select(tableref, fields, conditions);
+    // SELECT ... FROM ... -> SELECT DISTINCT (...) FROM ...
+    toReturn = toReturn.replace("SELECT", "SELECT DISTINCT").replace("SELECT DISTINCT DISTINCT", "SELECT DISTINCT");
+//    toReturn = toReturn.replace("SELECT ", "SELECT DISTINCT (");
+//    toReturn = toReturn.replace("SELECT DISTINCT (DISTINCT", "SELECT DISTINCT");
+//    toReturn = toReturn.replace(" FROM", ") FROM");
+    return toReturn;
 }
 
 /**
