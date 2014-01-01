@@ -225,7 +225,8 @@ bool DDICore::changeLocalDatabaseTo(const QString &absPath)
 
     // Check the file
     QFile f(file);
-    if (!f.exists() || !f.isWritable() || !f.isReadable()) {
+//    qWarning() << f.exists() << f.isWritable() << f.isReadable();
+    if (!f.exists()) {
         LOG_ERROR(tr("Unable to open selected database: %1").arg(file));
         return false;
     }

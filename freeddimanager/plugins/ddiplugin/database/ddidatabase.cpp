@@ -217,6 +217,7 @@ bool DDIDatabase::initialize(const QString &pathToDb, bool createIfNotExists)
     }
 
     // Connect Drugs Database
+    // TODO: manage connection when pathToDb points to an existing database
     Utils::DatabaseConnector drugConnector;
     QString path = pathToDb;
     if (!QFileInfo(pathToDb).isDir())
