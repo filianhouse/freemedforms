@@ -13,3 +13,6 @@ Drugs database creation
   * Be
   * Pt
   -> also prepare for datapack server integration
+
+Code
+  *  components/xxx.xxx
