@@ -39,12 +39,16 @@
 
 #include <coreplugin/icore.h>
 #include <coreplugin/isettings.h>
+#include <coreplugin/imainwindow.h>
+#include <coreplugin/constants.h>
 
 #include <utils/log.h>
 #include <utils/global.h>
 #include <translationutils/constants.h>
+#include <translationutils/trans_filepathxml.h>
 
 #include <QDir>
+#include <QFileDialog>
 
 #include <QDebug>
 
@@ -155,6 +159,7 @@ bool DDICore::initialize()
 
 bool DDICore::recreateDatabase()
 {
+    // TODO: manage things if user wants to recreate its own db (after selecting another db with changeLocalDatabaseTo()
     QString dbFileName = QString("%1/%2/%3").arg(settings()->path(Core::ISettings::UserDocumentsPath))
             .arg(Constants::DDIMANAGER_DATABASE_NAME)
             .arg(Constants::DDIMANAGER_DATABASE_FILENAME);;
@@ -195,6 +200,51 @@ QString DDICore::backupDatabaseTo(const QString &absPath)
             return fileName;
 
     return QString::null;
+}
+
+/**
+ * Use another ddi database than the current one, the database should be located
+ * at \e absPath.
+ * Database, models are resetted and all unsaved data will be lost.
+ * If \e absPath is empty, open a file dialog selector.
+ * \warning The database must exist (you will not create an empty one).
+ */
+bool DDICore::changeLocalDatabaseTo(const QString &absPath)
+{
+    QString file = absPath;
+
+    // No path -> ask user
+    if (absPath.isEmpty()) {
+        file = QFileDialog::getOpenFileName(Core::ICore::instance()->mainWindow(),
+                                            tkTr(Trans::Constants::OPEN_FILE),
+                                            settings()->path(Core::ISettings::UserDocumentsPath),
+                                            tkTr(Core::Constants::DATABASE_FILEFILTER));
+        if (file.isEmpty())
+            return false;
+    }
+
+    // Check the file
+    QFile f(file);
+    if (!f.exists() || !f.isWritable() || !f.isReadable()) {
+        LOG_ERROR(tr("Unable to open selected database: %1").arg(file));
+        return false;
+    }
+    DDIDatabase fakeTestingDb;
+    if (!fakeTestingDb.initialize(file, false)) {
+        LOG_ERROR(tr("Unable to access selected database: %1").arg(file));
+        return false;
+    }
+
+    // Re-initialize ddi database
+    d->_base->forceFullDatabaseRefreshing();
+    if (!d->_base->initialize(file, false)) {
+        LOG_ERROR(tr("An error occured when initializing the selected database: %1").arg(file));
+        return false;
+    }
+
+    // Reset all models
+
+    return true;
 }
 
 /** Returns the Atc table model single instance */

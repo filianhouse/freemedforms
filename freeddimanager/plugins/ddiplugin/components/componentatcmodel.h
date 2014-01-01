@@ -53,6 +53,7 @@ class ComponentAtcModel : public QAbstractTableModel
 protected:
     explicit ComponentAtcModel(QObject *parent = 0);
     bool initialize();
+    bool onDdiDatabaseChanged();
 
 public:
     enum DataRepresentation {

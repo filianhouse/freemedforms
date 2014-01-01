@@ -65,7 +65,22 @@ public:
         _rows(0),
         q(parent)
     {
-        Q_UNUSED(q);
+    }
+
+    ~ComponentAtcModelPrivate()
+    {}
+
+    void createSqlModel()
+    {
+        _sql = new QSqlTableModel(q, ddiBase().database());
+        _sql->setTable(ddiBase().table(Constants::Table_COMPONENTS));
+        _sql->setEditStrategy(QSqlTableModel::OnManualSubmit);
+
+        // QObject::connect(_sql, SIGNAL(primeInsert(int,QSqlRecord&)), q, SLOT(populateNewRowWithDefault(int, QSqlRecord&)));
+        QObject::connect(_sql, SIGNAL(layoutAboutToBeChanged()), q, SIGNAL(layoutAboutToBeChanged()));
+        QObject::connect(_sql, SIGNAL(layoutChanged()), q, SIGNAL(layoutChanged()));
+        QObject::connect(_sql, SIGNAL(modelAboutToBeReset()), q, SIGNAL(modelAboutToBeReset()));
+        QObject::connect(_sql, SIGNAL(modelReset()), q, SIGNAL(modelReset()));
     }
 
     int modelColumnToSqlColumn(const int modelColumn)
@@ -107,16 +122,7 @@ ComponentAtcModel::ComponentAtcModel(QObject *parent) :
     d(new Internal::ComponentAtcModelPrivate(this))
 {
     setObjectName("ComponentAtcModel");
-    d->_sql = new QSqlTableModel(this, ddiBase().database());
-    d->_sql->setTable(ddiBase().table(Constants::Table_COMPONENTS));
-    d->_sql->setEditStrategy(QSqlTableModel::OnManualSubmit);
-    // d->_sql->setSort(Constants::, Qt::AscendingOrder);
-    // Utils::linkSignalsFromFirstModelToSecondModel(d->_sql, this, true);
-    connect(d->_sql, SIGNAL(primeInsert(int,QSqlRecord&)), this, SLOT(populateNewRowWithDefault(int, QSqlRecord&)));
-    connect(d->_sql, SIGNAL(layoutAboutToBeChanged()), this, SIGNAL(layoutAboutToBeChanged()));
-    connect(d->_sql, SIGNAL(layoutChanged()), this, SIGNAL(layoutChanged()));
-    connect(d->_sql, SIGNAL(modelAboutToBeReset()), this, SIGNAL(modelAboutToBeReset()));
-    connect(d->_sql, SIGNAL(modelReset()), this, SIGNAL(modelReset()));
+    d->createSqlModel();
 }
 
 ComponentAtcModel::~ComponentAtcModel()
@@ -133,6 +139,14 @@ bool ComponentAtcModel::initialize()
     while (d->_sql->canFetchMore(index(d->_sql->rowCount(), 0)))
         d->_sql->fetchMore(index(d->_sql->rowCount(), 0));
     return true;
+}
+
+bool ComponentAtcModel::onDdiDatabaseChanged()
+{
+    delete d->_sql;
+    d->_sql = 0;
+    d->createSqlModel();
+    return initialize();
 }
 
 /** Return all available Drug database Uid from the database */

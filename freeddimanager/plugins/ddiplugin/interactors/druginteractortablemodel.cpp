@@ -57,11 +57,24 @@ public:
         _sql(0),
         q(parent)
     {
-        Q_UNUSED(q);
     }
 
     ~DrugInteractorTableModelPrivate()
     {
+    }
+
+    void createSqlModel()
+    {
+        _sql = new QSqlTableModel(q, ddiBase().database());
+        _sql->setTable(ddiBase().table(Constants::Table_INTERACTORS));
+        _sql->setEditStrategy(QSqlTableModel::OnManualSubmit);
+        // _sql->setSort(Constants::INTERACTOR_UID, Qt::AscendingOrder);
+
+        QObject::connect(_sql, SIGNAL(primeInsert(int,QSqlRecord&)), q, SLOT(populateNewRowWithDefault(int, QSqlRecord&)));
+        QObject::connect(_sql, SIGNAL(layoutAboutToBeChanged()), q, SIGNAL(layoutAboutToBeChanged()));
+        QObject::connect(_sql, SIGNAL(layoutChanged()), q, SIGNAL(layoutChanged()));
+        QObject::connect(_sql, SIGNAL(modelAboutToBeReset()), q, SIGNAL(modelAboutToBeReset()));
+        QObject::connect(_sql, SIGNAL(modelReset()), q, SIGNAL(modelReset()));
     }
 
 public:
@@ -80,16 +93,7 @@ DrugInteractorTableModel::DrugInteractorTableModel(QObject *parent) :
     d(new Internal::DrugInteractorTableModelPrivate(this))
 {
     setObjectName("DrugInteractorTableModel");
-    d->_sql = new QSqlTableModel(this, ddiBase().database());
-    d->_sql->setTable(ddiBase().table(Constants::Table_INTERACTORS));
-    d->_sql->setEditStrategy(QSqlTableModel::OnManualSubmit);
-    // d->_sql->setSort(Constants::INTERACTOR_UID, Qt::AscendingOrder);
-
-    connect(d->_sql, SIGNAL(primeInsert(int,QSqlRecord&)), this, SLOT(populateNewRowWithDefault(int, QSqlRecord&)));
-    connect(d->_sql, SIGNAL(layoutAboutToBeChanged()), this, SIGNAL(layoutAboutToBeChanged()));
-    connect(d->_sql, SIGNAL(layoutChanged()), this, SIGNAL(layoutChanged()));
-    connect(d->_sql, SIGNAL(modelAboutToBeReset()), this, SIGNAL(modelAboutToBeReset()));
-    connect(d->_sql, SIGNAL(modelReset()), this, SIGNAL(modelReset()));
+    d->createSqlModel();
 }
 
 DrugInteractorTableModel::~DrugInteractorTableModel()
@@ -112,6 +116,14 @@ bool DrugInteractorTableModel::initialize()
     d->_distinctUids = ddiBase().interactorDistinctUids();
 
     return true;
+}
+
+bool DrugInteractorTableModel::onDdiDatabaseChanged()
+{
+    delete d->_sql;
+    d->_sql = 0;
+    d->createSqlModel();
+    return initialize();
 }
 
 int DrugInteractorTableModel::rowCount(const QModelIndex &parent) const
@@ -300,7 +312,7 @@ bool DrugInteractorTableModel::setData(const QModelIndex &index, const QVariant 
         // set the date of review
         if (index.column() == IsReviewed) {
             QModelIndex reviewDateIndex = d->_sql->index(index.row(), Constants::INTERACTOR_DATEREVIEW);
-            if (!d->_sql->setData(reviewDateIndex, QDate::currentDate(), role)) {
+            if (!d->_sql->setData(reviewDateIndex, QDate::currentDate())) {
                 LOG_ERROR("Unable to set date of review");
                 return false;
             } else {
@@ -311,7 +323,7 @@ bool DrugInteractorTableModel::setData(const QModelIndex &index, const QVariant 
         // set the date update
         if (ok) {
             sqlIndex = d->_sql->index(index.row(), Constants::INTERACTOR_DATEUPDATE);
-            ok = d->_sql->setData(sqlIndex, QDateTime::currentDateTime(), role);
+            ok = d->_sql->setData(sqlIndex, QDateTime::currentDateTime());
             if (ok) {
                 QModelIndex idx = this->index(index.row(), DateLastUpdate);
                 Q_EMIT dataChanged(idx, idx);
@@ -476,6 +488,11 @@ DrugInteractorFilteredTableModel::DrugInteractorFilteredTableModel(QObject *pare
 
 DrugInteractorFilteredTableModel::~DrugInteractorFilteredTableModel()
 {}
+
+bool DrugInteractorFilteredTableModel::initialize()
+{
+    return DrugInteractorTableModel::initialize();
+}
 
 void DrugInteractorFilteredTableModel::filterLastUpdated(const QDate &since)
 {

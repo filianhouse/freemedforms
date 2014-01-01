@@ -63,7 +63,7 @@ ComponentAtcMode::ComponentAtcMode(QObject *parent) :
     Core::IMode(parent),
     _widget(0)
 {
-    setDisplayName("ATC");
+    setDisplayName(tr("Components"));
     setIcon(theme()->icon(Constants::ICON_COMPONENTATC, Core::ITheme::BigIcon));
     setPriority(1);
     setId(Constants::MODE_COMPONENTATC);

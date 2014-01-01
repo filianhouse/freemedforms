@@ -34,7 +34,7 @@
  * \file ddicore.h
  * \author Eric Maeker
  * \version 0.10.0
- * \date 11 Oct 2013
+ * \date 01 Jan 2014
 */
 
 namespace DDI {
@@ -63,6 +63,7 @@ public:
 
     bool recreateDatabase();
     QString backupDatabaseTo(const QString &absPath);
+    bool changeLocalDatabaseTo(const QString &absPath = QString::null);
 
     AtcTableModel *atcTableModel() const;
     DrugInteractorTableModel *drugInteractorTableModel() const;

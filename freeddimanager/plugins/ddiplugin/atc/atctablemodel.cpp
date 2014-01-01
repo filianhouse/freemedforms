@@ -116,6 +116,14 @@ bool AtcTableModel::initialize()
     return true;
 }
 
+bool AtcTableModel::onDdiDatabaseChanged()
+{
+    delete d->_sql;
+    d->_sql = 0;
+    d->createSqlModel();
+    return initialize();
+}
+
 int AtcTableModel::rowCount(const QModelIndex &parent) const
 {
     return d->_sql->rowCount(parent);
