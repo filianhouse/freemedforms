@@ -67,11 +67,24 @@ public:
         _sql(0),
         q(parent)
     {
-        Q_UNUSED(q);
     }
 
     ~AtcTableModelPrivate()
     {}
+
+    void createSqlModel()
+    {
+        _sql = new QSqlTableModel(q, ddiBase().database());
+        _sql->setTable(ddiBase().table(Constants::Table_ATC));
+        _sql->setEditStrategy(QSqlTableModel::OnManualSubmit);
+        _sql->setSort(Constants::ATC_CODE, Qt::AscendingOrder);
+
+        // QObject::connect(_sql, SIGNAL(primeInsert(int,QSqlRecord&)), q, SLOT(populateNewRowWithDefault(int, QSqlRecord&)));
+        QObject::connect(_sql, SIGNAL(layoutAboutToBeChanged()), q, SIGNAL(layoutAboutToBeChanged()));
+        QObject::connect(_sql, SIGNAL(layoutChanged()), q, SIGNAL(layoutChanged()));
+        QObject::connect(_sql, SIGNAL(modelAboutToBeReset()), q, SIGNAL(modelAboutToBeReset()));
+        QObject::connect(_sql, SIGNAL(modelReset()), q, SIGNAL(modelReset()));
+    }
 
 public:
     QSqlTableModel *_sql;
@@ -88,13 +101,7 @@ AtcTableModel::AtcTableModel(QObject *parent) :
     d(new AtcTableModelPrivate(this))
 {
     setObjectName("AtcTableModel");
-    d->_sql = new QSqlTableModel(this, ddiBase().database());
-    d->_sql->setTable(ddiBase().table(Constants::Table_ATC));
-    d->_sql->setEditStrategy(QSqlTableModel::OnManualSubmit);
-    d->_sql->setSort(Constants::ATC_CODE, Qt::AscendingOrder);
-
-    // FIXME: do not connect all signals !
-    Utils::linkSignalsFromFirstModelToSecondModel(d->_sql, this, true);
+    d->createSqlModel();
 }
 
 AtcTableModel::~AtcTableModel()
@@ -159,7 +166,8 @@ bool AtcTableModel::setData(const QModelIndex &index, const QVariant &value, int
 {
     if (!index.isValid())
         return false;
-
+    if (role != Qt::EditRole)
+        return false;
     int sql = -1;
     switch (index.column()) {
     case Id: sql = Constants::ATC_ID; break;
@@ -176,8 +184,24 @@ bool AtcTableModel::setData(const QModelIndex &index, const QVariant &value, int
     case WhoUpdateYear: sql = Constants::ATC_WHOYEARUPDATE; break;
     case Comment: sql = Constants::ATC_COMMENT; break;
     };
+
+    // Save data to sql model
     QModelIndex sqlIndex = d->_sql->index(index.row(), sql);
-    return d->_sql->setData(sqlIndex, value, role);
+    bool ok = d->_sql->setData(sqlIndex, value, role);
+    if (!ok)
+        LOG_QUERY_ERROR(d->_sql->query());
+    else
+        Q_EMIT dataChanged(index, index);
+
+    // Update the DateUpdate of the sql & current model
+    sqlIndex = d->_sql->index(index.row(), Constants::ATC_DATEUPDATE);
+    ok = d->_sql->setData(sqlIndex, QDateTime::currentDateTime());
+    QModelIndex up = this->index(index.row(), DateUpdate);
+    if (!ok)
+        LOG_QUERY_ERROR(d->_sql->query());
+    else
+        Q_EMIT dataChanged(up, up);
+    return ok;
 }
 
 QVariant AtcTableModel::headerData(int section, Qt::Orientation orientation, int role) const
