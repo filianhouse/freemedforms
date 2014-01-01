@@ -1,0 +1,15 @@
+Database
+  * Allow database reloading (hot-changing of db)
+
+Server
+  * Allow data sending
+  * Allow data receiving
+
+Drugs database creation
+  * French
+  * FDA
+  * CA
+  * ZA
+  * Be
+  * Pt
+  -> also prepare for datapack server integration
