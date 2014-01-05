@@ -73,6 +73,9 @@ public:
     // Internal usage
     Internal::DDIDatabase &database() const;
 
+Q_SIGNALS:
+    void databaseChanged();
+
 private:
     static DDICore *_instance;
     Internal::DDICorePrivate *d;

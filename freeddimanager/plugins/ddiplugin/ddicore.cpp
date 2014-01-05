@@ -225,7 +225,6 @@ bool DDICore::changeLocalDatabaseTo(const QString &absPath)
 
     // Check the file
     QFile f(file);
-//    qWarning() << f.exists() << f.isWritable() << f.isReadable();
     if (!f.exists()) {
         LOG_ERROR(tr("Unable to open selected database: %1").arg(file));
         return false;
@@ -244,7 +243,12 @@ bool DDICore::changeLocalDatabaseTo(const QString &absPath)
     }
 
     // Reset all models
+    d->_atcTableModel->onDdiDatabaseChanged();
+    d->_componentAtcModel->onDdiDatabaseChanged();
+    d->_drugInteractorTableModel->onDdiDatabaseChanged();
+    d->_drugDrugInteractionTableModel->onDdiDatabaseChanged();
 
+    Q_EMIT databaseChanged();
     return true;
 }
 

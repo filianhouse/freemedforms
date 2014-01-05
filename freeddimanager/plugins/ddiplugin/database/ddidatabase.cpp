@@ -227,6 +227,7 @@ bool DDIDatabase::initialize(const QString &pathToDb, bool createIfNotExists)
     drugConnector.setHost(QFileInfo(databaseFileName()).fileName());
     drugConnector.setAccessMode(Utils::DatabaseConnector::ReadWrite);
     drugConnector.setDriver(Utils::Database::SQLite);
+    drugConnector.setSqliteUsesExactFile(true);
 
     LOG_FOR("DDIDatabase", tkTr(Trans::Constants::SEARCHING_DATABASE_1_IN_PATH_2).arg(connectionName()).arg(pathToDb));
 
@@ -975,7 +976,11 @@ bool DDIDatabase::createDatabase(const QString &connection, const QString &prefi
     }
     if (createOption!=Utils::Database::CreateDatabase)
         return false;
-    QString pathOrHostName = connector.absPathToSqliteReadWriteDatabase() + QDir::separator() + QString(connectionName());
+    QString pathOrHostName;
+    if (connector.useExactFile())
+        pathOrHostName = connector.absPathToSqliteReadWriteDatabase();
+    else
+        pathOrHostName = connector.absPathToSqliteReadWriteDatabase() + QDir::separator() + QString(connectionName());
     LOG_FOR("DDIDatabase", tkTr(Trans::Constants::TRYING_TO_CREATE_1_PLACE_2).arg(prefixedDbName).arg(pathOrHostName));
 
     setConnectionName(connectionName());

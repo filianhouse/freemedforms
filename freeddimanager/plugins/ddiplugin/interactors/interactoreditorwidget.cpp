@@ -343,8 +343,8 @@ InteractorEditorWidget::InteractorEditorWidget(QWidget *parent) :
     connect(d->ui->molsListView->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)), this, SLOT(interactorActivated(QModelIndex)));
     connect(d->ui->searchLine, SIGNAL(textChanged(QString)), this, SLOT(filterDrugInteractorModel(QString)));
     retranslateUi();
-
     setEditorsEnabled(false);
+    connect(ddiCore(), SIGNAL(databaseChanged()), this, SLOT(onCoreDatabaseChanged()));
 }
 
 InteractorEditorWidget::~InteractorEditorWidget()
@@ -354,6 +354,13 @@ InteractorEditorWidget::~InteractorEditorWidget()
         delete d;
     }
     d = 0;
+}
+
+void InteractorEditorWidget::onCoreDatabaseChanged()
+{
+    qWarning() << "----------------------- DBCHANGED";
+    setEditorsEnabled(false);
+    interactorActivated(QModelIndex());
 }
 
 /** Enabled/Disabled the editor */
