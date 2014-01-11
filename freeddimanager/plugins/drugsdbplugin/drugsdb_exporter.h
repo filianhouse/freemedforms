@@ -18,15 +18,15 @@
  *  along with this program (COPYING.FREEMEDFORMS file).                   *
  *  If not, see <http://www.gnu.org/licenses/>.                            *
  ***************************************************************************/
-#ifndef DDIMANAGERPLUGIN_EXPORTER_H
-#define DDIMANAGERPLUGIN_EXPORTER_H
+#ifndef DDIMANAGER_DRUGSDBPLUGIN_EXPORTER_H
+#define DDIMANAGER_DRUGSDBPLUGIN_EXPORTER_H
 
 #include <qglobal.h>
 
-#if defined(DDIMANAGER_LIBRARY)
-#define DDI_EXPORT Q_DECL_EXPORT
+#if defined(DRUGSDB_LIBRARY)
+#define DRUGSDB_EXPORT Q_DECL_EXPORT
 #else
-#define DDI_EXPORT Q_DECL_IMPORT
+#define DRUGSDB_EXPORT Q_DECL_IMPORT
 #endif
 
-#endif  // DDIMANAGERPLUGIN_EXPORTER_H
+#endif  // DDIMANAGER_DRUGSDBPLUGIN_EXPORTER_H
