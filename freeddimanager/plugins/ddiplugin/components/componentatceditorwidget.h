@@ -51,9 +51,9 @@ public:
 //    void processCSVFile();
 
 protected Q_SLOTS:
-    void changeDatabase(const int index);
-    void activated(const QModelIndex &index);
-    void pressed(const QModelIndex &index);
+    void onChangeComponentDrugDatabaseUidRequested(const int index);
+    void onComponentViewItemActivated(const QModelIndex &index);
+    void onComponentViewItemPressed(const QModelIndex &index);
     void onRemoveUnreviewedRequested();
 
 protected:

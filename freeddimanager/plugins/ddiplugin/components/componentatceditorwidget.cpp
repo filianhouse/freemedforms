@@ -27,7 +27,7 @@
 #include "componentatceditorwidget.h"
 #include "componentatcmodel.h"
 #include <ddiplugin/ddicore.h>
-// #include "searchatcindatabasedialog.h"
+#include <ddiplugin/atc/searchatcindatabasedialog.h>
 // #include "drugsdbcore.h"
 
 // #include <coreplugin/ftb_constants.h>
@@ -107,8 +107,8 @@ ComponentAtcEditorWidget::ComponentAtcEditorWidget(QWidget *parent) :
     d->ui->tableView->horizontalHeader()->setResizeMode(ComponentAtcModel::FancyButton, QHeaderView::Fixed);
     d->ui->tableView->horizontalHeader()->setResizeMode(ComponentAtcModel::DrugDatabaseComponentUid1, QHeaderView::ResizeToContents);
     d->ui->tableView->horizontalHeader()->setResizeMode(ComponentAtcModel::DrugDatabaseComponentUid2, QHeaderView::ResizeToContents);
-    d->ui->tableView->horizontalHeader()->setResizeMode(ComponentAtcModel::IsValid, QHeaderView::Fixed);
-    d->ui->tableView->horizontalHeader()->setResizeMode(ComponentAtcModel::IsReviewed, QHeaderView::Fixed);
+    d->ui->tableView->horizontalHeader()->setResizeMode(ComponentAtcModel::IsValid, QHeaderView::ResizeToContents);
+    d->ui->tableView->horizontalHeader()->setResizeMode(ComponentAtcModel::IsReviewed, QHeaderView::ResizeToContents);
     d->ui->tableView->horizontalHeader()->setResizeMode(ComponentAtcModel::Name, QHeaderView::ResizeToContents);
     d->ui->tableView->horizontalHeader()->setResizeMode(ComponentAtcModel::AtcCodeList, QHeaderView::Interactive);
     d->ui->tableView->horizontalHeader()->setResizeMode(ComponentAtcModel::SuggestedAtcCodeList, QHeaderView::Interactive);
@@ -117,16 +117,14 @@ ComponentAtcEditorWidget::ComponentAtcEditorWidget(QWidget *parent) :
     d->ui->tableView->horizontalHeader()->setResizeMode(ComponentAtcModel::Reviewer, QHeaderView::Interactive);
     d->ui->tableView->horizontalHeader()->setResizeMode(ComponentAtcModel::Comments, QHeaderView::Interactive);
     d->ui->tableView->setColumnWidth(ComponentAtcModel::FancyButton, 24);
-    d->ui->tableView->setColumnWidth(ComponentAtcModel::IsValid, 48);
-    d->ui->tableView->setColumnWidth(ComponentAtcModel::IsReviewed, 48);
     d->ui->tableView->horizontalHeader()->hideSection(ComponentAtcModel::Id);
     d->ui->tableView->horizontalHeader()->hideSection(ComponentAtcModel::Uid);
 
-    connect(d->ui->availableDrugsDb, SIGNAL(activated(int)), this, SLOT(changeDatabase(int)));
+    connect(d->ui->availableDrugsDb, SIGNAL(activated(int)), this, SLOT(onChangeComponentDrugDatabaseUidRequested(int)));
     connect(d->ui->saveButton, SIGNAL(clicked()), d->model, SLOT(saveModel()));
     connect(d->ui->reveiwers, SIGNAL(activated(QString)), d->model, SLOT(setActualReviewer(QString)));
-    connect(d->ui->tableView, SIGNAL(activated(QModelIndex)), this, SLOT(activated(QModelIndex)));
-    connect(d->ui->tableView, SIGNAL(pressed(QModelIndex)), this, SLOT(pressed(QModelIndex)));
+    connect(d->ui->tableView, SIGNAL(activated(QModelIndex)), this, SLOT(onComponentViewItemActivated(QModelIndex)));
+    connect(d->ui->tableView, SIGNAL(pressed(QModelIndex)), this, SLOT(onComponentViewItemPressed(QModelIndex)));
     connect(d->ui->removeUnreviewed, SIGNAL(clicked()), this, SLOT(onRemoveUnreviewedRequested()));
     connect(d->ui->searchMol, SIGNAL(textChanged(QString)), d->proxyModel, SLOT(setFilterWildcard(QString)));
 
@@ -140,12 +138,20 @@ ComponentAtcEditorWidget::~ComponentAtcEditorWidget()
     d = 0;
 }
 
-void ComponentAtcEditorWidget::changeDatabase(const int index)
+/**
+ * Filter the Component model with the selected drug's database uid.
+ * The drugs database uid is in the ComponentAtcModel::availableDrugsDatabases()
+ */
+void ComponentAtcEditorWidget::onChangeComponentDrugDatabaseUidRequested(const int index)
 {
-    d->model->selectDatabase(d->model->availableDrugsDatabases().at(index));
+    const QStringList &dbUids = d->model->availableDrugsDatabases();
+    if (!IN_RANGE_STRICT_MAX(index, 0, dbUids.count()))
+        return;
+    d->model->selectDatabase(dbUids.at(index));
 }
 
-void ComponentAtcEditorWidget::pressed(const QModelIndex &index)
+/** Reacts on index is clicked on the component tableview */
+void ComponentAtcEditorWidget::onComponentViewItemPressed(const QModelIndex &index)
 {
     if (index.column() == ComponentAtcModel::FancyButton) {
         QMenu *menu = new QMenu(this);
@@ -161,11 +167,11 @@ void ComponentAtcEditorWidget::pressed(const QModelIndex &index)
         menu->addAction(copyClip);
         QAction *selected = menu->exec(QCursor::pos());
         if (selected == atcSearchDialog) {
-//            SearchAtcInDatabaseDialog dlg(this, d->proxyModel->index(index.row(), ComponentAtcModel::MoleculeName).data().toString());
-//            if (dlg.exec() == QDialog::Accepted) {
-//                d->proxyModel->setData(d->proxyModel->index(index.row(), ComponentAtcModel::ATC_Code), dlg.getSelectedCodes().join(","));
-//                d->proxyModel->setData(d->proxyModel->index(index.row(), ComponentAtcModel::Review), Qt::Checked, Qt::CheckStateRole);
-//            }
+            SearchAtcInDatabaseDialog dlg(this, d->proxyModel->index(index.row(), ComponentAtcModel::Name).data().toString());
+            if (dlg.exec() == QDialog::Accepted) {
+                d->proxyModel->setData(d->proxyModel->index(index.row(), ComponentAtcModel::AtcCodeList), dlg.getSelectedCodes().join(","));
+                d->proxyModel->setData(d->proxyModel->index(index.row(), ComponentAtcModel::IsReviewed), 1);
+            }
         } else if (selected == google) {
             QDesktopServices::openUrl(QUrl(QString("http://www.google.fr/search?rls=en&q=%1+atc&ie=UTF-8&oe=UTF-8&redir_esc=").arg(d->proxyModel->index(index.row(), ComponentAtcModel::Name).data().toString())));
         } else if (selected == who) {
@@ -181,16 +187,16 @@ void ComponentAtcEditorWidget::pressed(const QModelIndex &index)
     }
 }
 
-void ComponentAtcEditorWidget::activated(const QModelIndex &index)
+void ComponentAtcEditorWidget::onComponentViewItemActivated(const QModelIndex &index)
 {
     if (!d->proxyModel)
         return;
     if (index.column() == ComponentAtcModel::Name) {
-//        SearchAtcInDatabaseDialog dlg(this, d->proxyModel->index(index.row(), ComponentAtcModel::Name).data().toString());
-//        if (dlg.exec() == QDialog::Accepted) {
-//            d->proxyModel->setData(d->proxyModel->index(index.row(), ComponentAtcModel::AtcCodeList), dlg.getSelectedCodes().join(","));
-//            d->proxyModel->setData(d->proxyModel->index(index.row(), ComponentAtcModel::IsReviewed), Qt::Checked, Qt::CheckStateRole);
-//        }
+        SearchAtcInDatabaseDialog dlg(this, d->proxyModel->index(index.row(), ComponentAtcModel::Name).data().toString());
+        if (dlg.exec() == QDialog::Accepted) {
+            d->proxyModel->setData(d->proxyModel->index(index.row(), ComponentAtcModel::AtcCodeList), dlg.getSelectedCodes().join(","));
+            d->proxyModel->setData(d->proxyModel->index(index.row(), ComponentAtcModel::IsReviewed), Qt::Checked, Qt::CheckStateRole);
+        }
     }
 }
 

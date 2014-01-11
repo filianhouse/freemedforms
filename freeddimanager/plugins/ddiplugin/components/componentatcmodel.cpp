@@ -26,6 +26,9 @@
  ***************************************************************************/
 /**
  * \class DDI::ComponentAtcModel
+ * This model holds information about drug's component and
+ * their link to any ATC code(s). \n
+ * This model is not in manual submit but this should be configurable.
 */
 
 #include "componentatcmodel.h"
@@ -74,7 +77,7 @@ public:
     {
         _sql = new QSqlTableModel(q, ddiBase().database());
         _sql->setTable(ddiBase().table(Constants::Table_COMPONENTS));
-        _sql->setEditStrategy(QSqlTableModel::OnManualSubmit);
+        // _sql->setEditStrategy(QSqlTableModel::OnManualSubmit);
 
         // QObject::connect(_sql, SIGNAL(primeInsert(int,QSqlRecord&)), q, SLOT(populateNewRowWithDefault(int, QSqlRecord&)));
         QObject::connect(_sql, SIGNAL(layoutAboutToBeChanged()), q, SIGNAL(layoutAboutToBeChanged()));
@@ -194,7 +197,15 @@ QVariant ComponentAtcModel::data(const QModelIndex &index, int role) const
     if (!index.isValid())
         return QVariant();
 
-    if (role == Qt::DisplayRole || role == Qt::EditRole) {
+    if (role == Qt::DisplayRole) {
+        QModelIndex sqlIndex = d->_sql->index(index.row(), d->modelColumnToSqlColumn(index.column()));
+        switch (index.column()) {
+        case IsReviewed: return d->_sql->data(sqlIndex).toInt()==1?"Reviewed":"Unreviewed";
+        case IsValid: return d->_sql->data(sqlIndex).toInt()==1?"Valid":"Invalid";
+        default: break;
+        }
+        return d->_sql->data(sqlIndex, role);
+    } else if (role == Qt::EditRole) {
         QModelIndex sqlIndex = d->_sql->index(index.row(), d->modelColumnToSqlColumn(index.column()));
         return d->_sql->data(sqlIndex, role);
     } else if (role == Qt::CheckStateRole) {
@@ -280,42 +291,59 @@ Qt::ItemFlags ComponentAtcModel::flags(const QModelIndex &index) const
         return 0;
 
     Qt::ItemFlags f = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
-//    if (index.column() == MoleculeName || index.column() == Date || index.column() == FancyButton)
-//        return f;
-
-//    if (index.column() == Review)
-//        f |= Qt::ItemIsUserCheckable;
-
-//    f |= Qt::ItemIsEditable;
+    switch (index.column()) {
+    case Name:
+    case DateUpdate:
+    case DateCreation:
+    case FancyButton:
+        return f;
+    case IsReviewed:
+    case IsValid:
+        f |= Qt::ItemIsUserCheckable;
+        break;
+    default:
+        f |= Qt::ItemIsEditable;
+    }
 
     return f;
 }
 
-//QVariant ComponentAtcModel::headerData(int section, Qt::Orientation orientation, int role) const
-//{
-//    if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
-//        switch (section) {
-//        case Name:
-//            return tr("Component name");
-//        case AtcCodeList:
-//            return tr("ATC code");
-//        case IsReviewed:
-//            return tr("Review state");
-//        case Reviewer:
-//            return tr("Reviewer");
-//        case Comments:
-//            return tr("Comments");
-//        case DateCreation:
-//            return tr("Date of creation");
-//        case DateUpdate:
-//            return tr("Date of update");
-//        default:
-//            return QVariant();
-//        }
-//    }
-
-//    return QVariant();
-//}
+QVariant ComponentAtcModel::headerData(int section, Qt::Orientation orientation, int role) const
+{
+    if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
+        switch (section) {
+        case Id:
+            return "Id";
+        case Uid:
+            return "Uid";
+        case DrugDatabaseComponentUid1:
+            return tr("Drugs database Uid1");
+        case DrugDatabaseComponentUid2:
+            return tr("Drugs database Uid2");
+        case Name:
+            return tr("Component name");
+        case AtcCodeList:
+            return tr("ATC code");
+        case SuggestedAtcCodeList:
+            return tr("Suggested ATC code");
+        case IsValid:
+            return tr("Validity");
+        case IsReviewed:
+            return tr("Reviewed");
+        case Reviewer:
+            return tr("Reviewers");
+        case Comments:
+            return tr("Comments");
+        case DateCreation:
+            return tr("Date of creation");
+        case DateUpdate:
+            return tr("Date of update");
+        default:
+            return QVariant();
+        }
+    }
+    return QVariant();
+}
 
 bool ComponentAtcModel::addUnreviewedMolecules(const QString &dbUid, const QStringList &molecules)
 {
