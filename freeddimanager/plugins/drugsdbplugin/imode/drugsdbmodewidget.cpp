@@ -112,6 +112,7 @@ DrugsDbModeWidget::DrugsDbModeWidget(QWidget *parent) :
     d->ui = new Ui::DrugsDbModeWidget();
     d->ui->setupUi(this);
     d->ui->progressBar->hide();
+    connect(d->ui->availableDatabases, SIGNAL(activated(int)), this, SLOT(onCurrentDrugsDatabaseChanged(int)));
 }
 
 /*! Destructor of the DrugsDb::Internal::DrugsDbModeWidget class */
@@ -246,6 +247,15 @@ void DrugsDbModeWidget::changeStepProgressRange(int min, int max)
         return;
     if (base && d->_progress)
         d->_progress->setRange(min, max);
+}
+
+/** When user select a new current database, update the information */
+void DrugsDbModeWidget::onCurrentDrugsDatabaseChanged(int)
+{
+    IDrugDatabase *base = d->currentDatabase();
+    if (!base)
+        return;
+    d->ui->output->setText(base->outputPath() + "  ..  " + base->outputFileName());
 }
 
 void DrugsDbModeWidget::showEvent(QShowEvent *event)

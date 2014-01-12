@@ -18,11 +18,10 @@ HEADERS += \
     imode/drugsdbmode.h \
     imode/drugsdbmodewidget.h \
     drugdatabasedescription.h \
-#    drugdatatabasestep.h \
     idrugdatabase.h \
 #    countries/be/belgishdrugsdatabase.h \
 #    countries/ca/canadiandrugsdatabase.h \
-#    countries/fr/frenchdrugsdatabasecreator.h \
+    countries/fr/frenchdrugsdatabasecreator.h \
 #    countries/pt/portuguesedrugsdatabase.h \
 #    countries/us/fdadrugsdatabasecreator.h \
 #    countries/za/southafricandrugsdatabase.h \
@@ -41,7 +40,7 @@ SOURCES += \
     idrugdatabase.cpp \
 #    countries/be/belgishdrugsdatabase.cpp \
 #    countries/ca/canadiandrugsdatabase.cpp \
-#    countries/fr/frenchdrugsdatabasecreator.cpp \
+    countries/fr/frenchdrugsdatabasecreator.cpp \
 #    countries/pt/portuguesedrugsdatabase.cpp \
 #    countries/us/fdadrugsdatabasecreator.cpp \
 #    countries/za/southafricandrugsdatabase.cpp \
@@ -52,7 +51,6 @@ FORMS += \
 #    countries/za/southafricandrugsdatabase.ui \
 #    countries/us/fdadrugsdatabasewidget.ui \
 #    countries/pt/portuguesedrugsdatabase.ui \
-#    countries/fr/frenchdrugsdatabasewidget.ui \
 #    countries/be/belgishdrugsdatabase.ui \
 #    countries/ca/canadiandrugsdatabasewidget.ui \
 

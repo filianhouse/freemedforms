@@ -25,25 +25,24 @@
  *       NAME <MAIL@ADDRESS.COM>                                           *
  ***************************************************************************/
 #include "frenchdrugsdatabasecreator.h"
-#include "moleculelinkermodel.h"
 #include "drug.h"
-#include "drugsdbcore.h"
-#include "idrugdatabasestepwidget.h"
-#include "moleculelinkdata.h"
+//#include "moleculelinkermodel.h"
+//#include "drugsdbcore.h"
+//#include "idrugdatabasestepwidget.h"
+//#include "moleculelinkdata.h"
 
 #include <coreplugin/icore.h>
-#include <coreplugin/imainwindow.h>
-#include <coreplugin/ftb_constants.h>
 #include <coreplugin/isettings.h>
+#include <coreplugin/fdm_constants.h>
+//#include <coreplugin/imainwindow.h>
 
-#include <drugsdb/drugdatabasedescription.h>
-#include <drugsdb/tools.h>
+#include <drugsdbplugin/drugdatabasedescription.h>
+#include <drugsdbplugin/tools.h>
 
 #include <drugsbaseplugin/drugbaseessentials.h>
 
 #include <utils/log.h>
 #include <utils/global.h>
-#include <extensionsystem/pluginmanager.h>
 #include <translationutils/constants.h>
 #include <translationutils/trans_drugs.h>
 #include <translationutils/trans_countries.h>
@@ -68,7 +67,7 @@
 // using this debugging enum. Set to -1 if you want all drugs to be processed
 enum { LimitDrugsTo = -1 };
 
-using namespace DrugsDB;
+using namespace DrugsDb;
 using namespace Internal;
 using namespace Trans::ConstantTranslations;
 
@@ -78,116 +77,110 @@ const char* const FRENCH_RPC_LINK           = "http://afssaps-prd.afssaps.fr/php
 }
 
 static inline Core::ISettings *settings()  { return Core::ICore::instance()->settings(); }
-static inline ExtensionSystem::PluginManager *pluginManager() {return ExtensionSystem::PluginManager::instance();}
-static inline DrugsDB::DrugsDBCore *drugsDbCore() {return DrugsDB::DrugsDBCore::instance();}
+//static inline DrugsDB::DrugsDBCore *drugsDbCore() {return DrugsDB::DrugsDBCore::instance();}
 
-/**
- * Option page for the Free French drugs database.
- * The ctor also create the DrugsDB::Internal::IDrugDatabaseStep object and
- * register it in the plugin manager object pool.
- */
-FreeFrenchDrugsDatabasePage::FreeFrenchDrugsDatabasePage(QObject *parent) :
-    IToolPage(parent),
-    _step(0)
-{
-    setObjectName("FrenchDrugsDatabasePage");
-    _step = new FrDrugDatatabaseStep(this);
-    pluginManager()->addObject(_step);
-}
+///**
+// * Option page for the Free French drugs database.
+// * The ctor also create the DrugsDB::Internal::IDrugDatabaseStep object and
+// * register it in the plugin manager object pool.
+// */
+//FreeFrenchDrugsDatabasePage::FreeFrenchDrugsDatabasePage(QObject *parent) :
+//    IToolPage(parent),
+//    _step(0)
+//{
+//    setObjectName("FrenchDrugsDatabasePage");
+//    _step = new FrDrugDatatabase(this);
+//    pluginManager()->addObject(_step);
+//}
 
-FreeFrenchDrugsDatabasePage::~FreeFrenchDrugsDatabasePage()
-{
-    pluginManager()->removeObject(_step);
-}
+//FreeFrenchDrugsDatabasePage::~FreeFrenchDrugsDatabasePage()
+//{
+//    pluginManager()->removeObject(_step);
+//}
 
-QString FreeFrenchDrugsDatabasePage::name() const
-{
-    return tkTr(Trans::Constants::COUNTRY_FRANCE);
-}
+//QString FreeFrenchDrugsDatabasePage::name() const
+//{
+//    return tkTr(Trans::Constants::COUNTRY_FRANCE);
+//}
 
-QString FreeFrenchDrugsDatabasePage::category() const
-{
-    return tkTr(Trans::Constants::DRUGS) + "|" + Core::Constants::CATEGORY_FREEDRUGSDATABASE;
-}
+//QString FreeFrenchDrugsDatabasePage::category() const
+//{
+//    return tkTr(Trans::Constants::DRUGS) + "|" + Core::Constants::CATEGORY_FREEDRUGSDATABASE;
+//}
 
-QWidget *FreeFrenchDrugsDatabasePage::createPage(QWidget *parent)
-{
-    Q_ASSERT(_step);
-    IDrugDatabaseStepWidget *widget = new IDrugDatabaseStepWidget(parent);
-    widget->initialize(_step);
-    return widget;
-}
+//QWidget *FreeFrenchDrugsDatabasePage::createPage(QWidget *parent)
+//{
+//    Q_ASSERT(_step);
+//    IDrugDatabaseStepWidget *widget = new IDrugDatabaseStepWidget(parent);
+//    widget->initialize(_step);
+//    return widget;
+//}
 
-/**
- * Option page for the non-free French drugs database.
- * The ctor also create the DrugsDB::Internal::IDrugDatabaseStep object and
- * register it in the plugin manager object pool.
- */
-NonFreeFrenchDrugsDatabasePage::NonFreeFrenchDrugsDatabasePage(QObject *parent) :
-    IToolPage(parent),
-    _step(0)
-{
-    setObjectName("NonFreeFrenchDrugsDatabasePage");
-    _step = new FrDrugDatatabaseStep(this);
-    _step->setLicenseType(IDrugDatabaseStep::NonFree);
-    pluginManager()->addObject(_step);
-}
+///**
+// * Option page for the non-free French drugs database.
+// * The ctor also create the DrugsDB::Internal::IDrugDatabaseStep object and
+// * register it in the plugin manager object pool.
+// */
+//NonFreeFrenchDrugsDatabasePage::NonFreeFrenchDrugsDatabasePage(QObject *parent) :
+//    IToolPage(parent),
+//    _step(0)
+//{
+//    setObjectName("NonFreeFrenchDrugsDatabasePage");
+//    _step = new FrDrugDatatabase(this);
+//    _step->setLicenseType(IDrugDatabaseStep::NonFree);
+//    pluginManager()->addObject(_step);
+//}
 
-NonFreeFrenchDrugsDatabasePage::~NonFreeFrenchDrugsDatabasePage()
-{
-    pluginManager()->removeObject(_step);
-}
+//NonFreeFrenchDrugsDatabasePage::~NonFreeFrenchDrugsDatabasePage()
+//{
+//    pluginManager()->removeObject(_step);
+//}
 
-QString NonFreeFrenchDrugsDatabasePage::name() const
-{
-    return tkTr(Trans::Constants::COUNTRY_FRANCE);
-}
+//QString NonFreeFrenchDrugsDatabasePage::name() const
+//{
+//    return tkTr(Trans::Constants::COUNTRY_FRANCE);
+//}
 
-QString NonFreeFrenchDrugsDatabasePage::category() const
-{
-    return tkTr(Trans::Constants::DRUGS) + "|" + Core::Constants::CATEGORY_NONFREEDRUGSDATABASE;
-}
+//QString NonFreeFrenchDrugsDatabasePage::category() const
+//{
+//    return tkTr(Trans::Constants::DRUGS) + "|" + Core::Constants::CATEGORY_NONFREEDRUGSDATABASE;
+//}
 
-QWidget *NonFreeFrenchDrugsDatabasePage::createPage(QWidget *parent)
-{
-    Q_ASSERT(_step);
-    IDrugDatabaseStepWidget *widget = new IDrugDatabaseStepWidget(parent);
-    widget->initialize(_step);
-    return widget;
-}
+//QWidget *NonFreeFrenchDrugsDatabasePage::createPage(QWidget *parent)
+//{
+//    Q_ASSERT(_step);
+//    IDrugDatabaseStepWidget *widget = new IDrugDatabaseStepWidget(parent);
+//    widget->initialize(_step);
+//    return widget;
+//}
 
 
-FrDrugDatatabaseStep::FrDrugDatatabaseStep(QObject *parent) :
-    DrugsDB::Internal::IDrugDatabaseStep(parent),
+FrDrugDatatabase::FrDrugDatatabase(QObject *parent) :
+    DrugsDb::Internal::IDrugDatabase(parent),
     m_WithProgress(false)
 {
-    setObjectName("FrDrugDatatabaseStep");
+    setObjectName("FrDrugDatatabase");
     setTempPath(QString("%1/%2")
                 .arg(settings()->value(Core::Constants::S_TMP_PATH).toString())
                 .arg("/FrenchRawSources/"));
-    setConnectionName("fr_free");
-    setOutputPath(Tools::databaseOutputPath() + "/drugs/");
+    setOutputPath(settings()->value(Core::Constants::S_DBOUTPUT_PATH).toString() + "/drugs/");
     setDatabaseDescriptionFile(QString("%1/%2/%3")
                                .arg(settings()->value(Core::Constants::S_GITFILES_PATH).toString())
                                .arg(Core::Constants::PATH_TO_DRUG_DATABASE_DESCRIPTION_FILES)
                                .arg("fr/description.xml"));
-    setDatapackDescriptionFile(QString("%1/%2/%3")
-                               .arg(settings()->value(Core::Constants::S_GITFILES_PATH).toString())
-                               .arg(Core::Constants::PATH_TO_DATAPACK_DESCRIPTION_FILES)
-                               .arg("drugs/fr_noddi/packdescription.xml"));
-    setDownloadUrl("http://afssaps-prd.afssaps.fr/php/ecodex/telecharger/fic_cis_cip.zip");
+    setDownloadUrl("http://agence-prd.ansm.sante.fr/php/ecodex/telecharger/fic_cis_cip.zip");
     setLicenseType(Free);
     setSpcHtmlFilesDefaultEncoding("ISO-8859-1");
     createTemporaryStorage();
 }
 
-FrDrugDatatabaseStep::~FrDrugDatatabaseStep()
+FrDrugDatatabase::~FrDrugDatatabase()
 {
 }
 
-void FrDrugDatatabaseStep::setLicenseType(LicenseType type)
+void FrDrugDatatabase::setLicenseType(LicenseType type)
 {
-    IDrugDatabaseStep::setLicenseType(type);
+    IDrugDatabase::setLicenseType(type);
     if (type==NonFree) {
         setDisplayName(tr("Non-free French drugs database"));
         setConnectionName("fr_nonfree");
@@ -207,14 +200,14 @@ void FrDrugDatatabaseStep::setLicenseType(LicenseType type)
     }
 }
 
-QString FrDrugDatatabaseStep::processMessage() const
+QString FrDrugDatatabase::processMessage() const
 {
     if (licenseType() == NonFree)
         return tr("Non-free French drugs database creation");
     return tr("Free French drugs database creation");
 }
 
-bool FrDrugDatatabaseStep::process()
+bool FrDrugDatatabase::process()
 {
     unzipFiles();
     prepareData();
@@ -225,7 +218,7 @@ bool FrDrugDatatabaseStep::process()
     return true;
 }
 
-bool FrDrugDatatabaseStep::prepareData()
+bool FrDrugDatatabase::prepareData()
 {
     // check files
     QStringList files;
@@ -241,7 +234,7 @@ bool FrDrugDatatabaseStep::prepareData()
 }
 
 /** Read the raw source files and create the drugs database (this does not include the interaction data) */
-bool FrDrugDatatabaseStep::populateDatabase()
+bool FrDrugDatatabase::populateDatabase()
 {
     if (!checkDatabase()) {
         if (!createDatabase())
@@ -373,7 +366,7 @@ bool FrDrugDatatabaseStep::populateDatabase()
     return true;
 }
 
-bool FrDrugDatatabaseStep::linkMolecules()
+bool FrDrugDatatabase::linkMolecules()
 {
     // 21 May 2013
     //    NUMBER OF MOLECULES 5492
@@ -514,11 +507,11 @@ bool FrDrugDatatabaseStep::linkMolecules()
     Q_EMIT progressRangeChanged(0, 2);
     Q_EMIT progress(0);
 
-    // Associate Mol <-> ATC for drugs with one molecule only
-    MoleculeLinkerModel *model = drugsDbCore()->moleculeLinkerModel();
-    MoleculeLinkData data(drugEssentialDatabase(), sourceId(), ::FR_DRUGS_DATABASE_NAME, "fr");
-    if (!model->moleculeLinker(&data))
-        return false;
+//    // Associate Mol <-> ATC for drugs with one molecule only
+//    MoleculeLinkerModel *model = drugsDbCore()->moleculeLinkerModel();
+//    MoleculeLinkData data(drugEssentialDatabase(), sourceId(), ::FR_DRUGS_DATABASE_NAME, "fr");
+//    if (!model->moleculeLinker(&data))
+//        return false;
 
     Q_EMIT progress(1);
 
@@ -527,14 +520,14 @@ bool FrDrugDatatabaseStep::linkMolecules()
     Q_EMIT progress(0);
 
     // Save to links to drugs database
-    Tools::addComponentAtcLinks(drugEssentialDatabase(), data.moleculeIdToAtcId, sourceId());
+//    Tools::addComponentAtcLinks(drugEssentialDatabase(), data.moleculeIdToAtcId, sourceId());
 
     LOG(QString("Database processed"));
 
     // add unfound to extralinkermodel
     Q_EMIT progressLabelChanged(tr("Updating component link XML file"));
-    model->addUnreviewedMolecules(::FR_DRUGS_DATABASE_NAME, data.unfoundMoleculeAssociations);
-    model->saveModel();
+//    model->addUnreviewedMolecules(::FR_DRUGS_DATABASE_NAME, data.unfoundMoleculeAssociations);
+//    model->saveModel();
     Q_EMIT progress(1);
 
     return true;

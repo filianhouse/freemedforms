@@ -13,7 +13,7 @@ HEADERS += coreplugin.h \
     appaboutpage.h \
     commandlineparser.h \
     patient.h \
-    drc_constants.h
+    fdm_constants.h
 
 SOURCES += coreplugin.cpp \
     coreimpl.cpp \

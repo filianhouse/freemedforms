@@ -24,68 +24,74 @@
  *       NAME <MAIL@ADDRESS.COM>                                           *
  *       NAME <MAIL@ADDRESS.COM>                                           *
  ***************************************************************************/
-#ifndef FRENCHDRUGSDATABASECREATOR_H
-#define FRENCHDRUGSDATABASECREATOR_H
+#ifndef DDIMANAGER_DRUGSDB_INTERNAL_FRENCHDRUGSDATABASECREATOR_H
+#define DDIMANAGER_DRUGSDB_INTERNAL_FRENCHDRUGSDATABASECREATOR_H
 
-#include <coreplugin/itoolpage.h>
-#include <coreplugin/ftb_constants.h>
-#include <drugsdb/idrugdatabasestep.h>
+//#include <coreplugin/itoolpage.h>
+//#include <coreplugin/ftb_constants.h>
+#include <drugsdbplugin/idrugdatabase.h>
 
 #include <QWidget>
 #include <QMultiHash>
 
-namespace DrugsDB {
+/**
+ * \file frenchdrugsdatabasecreator.h
+ * \author Eric Maeker
+ * \version 0.10.0
+ * \date 11 Jan 2014
+*/
+
+namespace DrugsDb {
 namespace Internal {
-class FrDrugDatatabaseStep;
+//class FrDrugDatatabase;
 
-class FreeFrenchDrugsDatabasePage : public Core::IToolPage
+//class FreeFrenchDrugsDatabasePage : public Core::IToolPage
+//{
+//    Q_OBJECT
+//public:
+//    explicit FreeFrenchDrugsDatabasePage(QObject *parent = 0);
+//    ~FreeFrenchDrugsDatabasePage();
+
+//    virtual QString id() const {return "FreeFrenchDrugsDatabasePage";}
+//    virtual QString name() const;
+//    virtual QString category() const;
+//    virtual QIcon icon() const {return QIcon();}
+
+//    // widget will be deleted after the show
+//    virtual QWidget *createPage(QWidget *parent = 0);
+
+//private:
+//    FrDrugDatatabase *_step;
+//};
+
+//class NonFreeFrenchDrugsDatabasePage : public Core::IToolPage
+//{
+//    Q_OBJECT
+//public:
+//    explicit NonFreeFrenchDrugsDatabasePage(QObject *parent = 0);
+//    ~NonFreeFrenchDrugsDatabasePage();
+
+//    virtual QString id() const {return "NonFreeFrenchDrugsDatabasePage";}
+//    virtual QString name() const;
+//    virtual QString category() const;
+//    virtual QIcon icon() const {return QIcon();}
+
+//    // widget will be deleted after the show
+//    virtual QWidget *createPage(QWidget *parent = 0);
+
+//private:
+//    FrDrugDatatabase *_step;
+//};
+
+class FrDrugDatatabase : public DrugsDb::Internal::IDrugDatabase
 {
     Q_OBJECT
-public:
-    explicit FreeFrenchDrugsDatabasePage(QObject *parent = 0);
-    ~FreeFrenchDrugsDatabasePage();
-
-    virtual QString id() const {return "FreeFrenchDrugsDatabasePage";}
-    virtual QString name() const;
-    virtual QString category() const;
-    virtual QIcon icon() const {return QIcon();}
-
-    // widget will be deleted after the show
-    virtual QWidget *createPage(QWidget *parent = 0);
-
-private:
-    FrDrugDatatabaseStep *_step;
-};
-
-class NonFreeFrenchDrugsDatabasePage : public Core::IToolPage
-{
-    Q_OBJECT
-public:
-    explicit NonFreeFrenchDrugsDatabasePage(QObject *parent = 0);
-    ~NonFreeFrenchDrugsDatabasePage();
-
-    virtual QString id() const {return "NonFreeFrenchDrugsDatabasePage";}
-    virtual QString name() const;
-    virtual QString category() const;
-    virtual QIcon icon() const {return QIcon();}
-
-    // widget will be deleted after the show
-    virtual QWidget *createPage(QWidget *parent = 0);
-
-private:
-    FrDrugDatatabaseStep *_step;
-};
-
-class FrDrugDatatabaseStep : public DrugsDB::Internal::IDrugDatabaseStep
-{
-    Q_OBJECT
 
 public:
-    FrDrugDatatabaseStep(QObject *parent = 0);
-    ~FrDrugDatatabaseStep();
+    FrDrugDatatabase(QObject *parent = 0);
+    ~FrDrugDatatabase();
 
-    QString id() const {return "FrDrugDatatabaseStep";}
-    Steps stepNumber() const {return Core::IFullReleaseStep::DrugsDatabase;}
+    QString id() const {return "FrDrugDatatabase";}
     void setLicenseType(LicenseType type);
 
     bool process();
@@ -103,6 +109,6 @@ private:
 };
 
 }  //  namespace Internal
-}  //  namespace DrugsDB
+}  //  namespace DrugsDb
 
-#endif // FRENCHDRUGSDATABASECREATOR_H
+#endif // DDIMANAGER_DRUGSDB_INTERNAL_FRENCHDRUGSDATABASECREATOR_H

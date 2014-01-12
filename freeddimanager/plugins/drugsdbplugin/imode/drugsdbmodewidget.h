@@ -56,6 +56,7 @@ private Q_SLOTS:
     bool on_download_clicked();
     void downloadFinished();
     void changeStepProgressRange(int min, int max);
+    void onCurrentDrugsDatabaseChanged(int);
 
 private:
     void showEvent(QShowEvent *event);

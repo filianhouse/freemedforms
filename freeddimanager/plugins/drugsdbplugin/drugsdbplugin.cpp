@@ -26,6 +26,7 @@
 #include "drugsdbplugin.h"
 #include "imode/drugsdbmode.h"
 #include "idrugdatabase.h"
+#include <drugsdbplugin/countries/fr/frenchdrugsdatabasecreator.h>
 
 #include <coreplugin/icore.h>
 //#include <coreplugin/isettings.h>
@@ -81,6 +82,12 @@ bool DrugsDbPlugin::initialize(const QStringList &arguments, QString *errorMessa
     // Create the mode
     _mode = new DrugsDbMode(this);
     addObject(_mode);
+
+    // Create the database creator
+    IDrugDatabase *base = 0;
+    base = new FrDrugDatatabase(this);
+    _mode->registerDrugDatabase(base);
+    _databases.append(base);
 
     // add plugin info page
     addAutoReleasedObject(new Core::PluginAboutPage(pluginSpec(), this));

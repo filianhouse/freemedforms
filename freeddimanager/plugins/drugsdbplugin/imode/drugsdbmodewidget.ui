@@ -7,43 +7,81 @@
     <x>0</x>
     <y>0</y>
     <width>518</width>
-    <height>515</height>
+    <height>543</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="1" column="0" colspan="2">
-    <widget class="QComboBox" name="availableDatabases"/>
-   </item>
-   <item row="8" column="1">
-    <widget class="QTreeWidget" name="errors">
-     <property name="toolTip">
-      <string>ERRORS</string>
+   <item row="5" column="1">
+    <widget class="QProgressBar" name="progressBar">
+     <property name="value">
+      <number>24</number>
      </property>
-     <property name="alternatingRowColors">
-      <bool>true</bool>
-     </property>
-     <property name="columnCount">
-      <number>2</number>
-     </property>
-     <attribute name="headerVisible">
-      <bool>true</bool>
-     </attribute>
-     <column>
-      <property name="text">
-       <string notr="true">1</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string notr="true">2</string>
-      </property>
-     </column>
     </widget>
    </item>
-   <item row="8" column="0">
+   <item row="4" column="0" colspan="2">
+    <widget class="Line" name="line">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0" colspan="2">
+    <widget class="QLabel" name="title">
+     <property name="font">
+      <font>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Select the database you want to create</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0" colspan="2">
+    <widget class="QGroupBox" name="groupBox">
+     <property name="title">
+      <string>Free part</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="unzip">
+        <property name="text">
+         <string>Unzip sources</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QCheckBox" name="createDb">
+        <property name="text">
+         <string>Create drugs database</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QCheckBox" name="prepare">
+        <property name="text">
+         <string>Prepare raw sources</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QCheckBox" name="populate">
+        <property name="text">
+         <string>Populate database with drugs</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="9" column="0">
     <widget class="QTreeWidget" name="messages">
      <property name="toolTip">
       <string>MESSAGES</string>
@@ -68,6 +106,37 @@
       </property>
      </column>
     </widget>
+   </item>
+   <item row="5" column="0">
+    <widget class="QPushButton" name="download">
+     <property name="text">
+      <string>Download sources</string>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="0" colspan="2">
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="startJobs">
+       <property name="text">
+        <string>Start jobs</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
    <item row="7" column="0" colspan="2">
     <widget class="QGroupBox" name="groupBox_2">
@@ -120,101 +189,39 @@
      </layout>
     </widget>
    </item>
-   <item row="6" column="0" colspan="2">
-    <widget class="QGroupBox" name="groupBox">
-     <property name="title">
-      <string>Free part</string>
+   <item row="9" column="1">
+    <widget class="QTreeWidget" name="errors">
+     <property name="toolTip">
+      <string>ERRORS</string>
      </property>
-     <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="0">
-       <widget class="QCheckBox" name="unzip">
-        <property name="text">
-         <string>Unzip sources</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
-       <widget class="QCheckBox" name="createDb">
-        <property name="text">
-         <string>Create drugs database</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QCheckBox" name="prepare">
-        <property name="text">
-         <string>Prepare raw sources</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QCheckBox" name="populate">
-        <property name="text">
-         <string>Populate database with drugs</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
+     <property name="alternatingRowColors">
+      <bool>true</bool>
+     </property>
+     <property name="columnCount">
+      <number>2</number>
+     </property>
+     <attribute name="headerVisible">
+      <bool>true</bool>
+     </attribute>
+     <column>
+      <property name="text">
+       <string notr="true">1</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string notr="true">2</string>
+      </property>
+     </column>
     </widget>
    </item>
-   <item row="9" column="0" colspan="2">
-    <layout class="QHBoxLayout" name="horizontalLayout">
-     <item>
-      <spacer name="horizontalSpacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
-      <widget class="QPushButton" name="startJobs">
-       <property name="text">
-        <string>Start jobs</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
+   <item row="1" column="0" colspan="2">
+    <widget class="QComboBox" name="availableDatabases"/>
    </item>
-   <item row="5" column="0">
-    <widget class="QPushButton" name="download">
+   <item row="8" column="0" colspan="2">
+    <widget class="QLabel" name="output">
      <property name="text">
-      <string>Download sources</string>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="1">
-    <widget class="QProgressBar" name="progressBar">
-     <property name="value">
-      <number>24</number>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="0" colspan="2">
-    <widget class="Line" name="line">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="0" colspan="2">
-    <widget class="QLabel" name="title">
-     <property name="font">
-      <font>
-       <weight>75</weight>
-       <bold>true</bold>
-      </font>
-     </property>
-     <property name="text">
-      <string>Select the database you want to create</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignCenter</set>
+      <string notr="true"/>
      </property>
     </widget>
    </item>
