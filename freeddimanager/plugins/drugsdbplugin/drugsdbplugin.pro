@@ -10,12 +10,17 @@ INCLUDEPATH += ../
 DEPENDPATH += ../
 
 HEADERS += \
+    $${SOURCES_PLUGINS_PATH}/drugsbaseplugin/drugbaseessentials.h \
     constants.h \
+    tools.h \
+    drug.h \
     drugsdbplugin.h \
+    imode/drugsdbmode.h \
+    imode/drugsdbmodewidget.h \
     drugdatabasedescription.h \
 #    drugdatatabasestep.h \
-#    idrugdatabasestep.h \
-#    idrugdatabasestepwidget.h \
+    idrugdatabasestep.h \
+    idrugdatabasestepwidget.h \
 #    countries/be/belgishdrugsdatabase.h \
 #    countries/ca/canadiandrugsdatabase.h \
 #    countries/fr/frenchdrugsdatabasecreator.h \
@@ -25,12 +30,17 @@ HEADERS += \
 
 
 SOURCES += \
+    $${SOURCES_PLUGINS_PATH}/drugsbaseplugin/drugbaseessentials.cpp \
     drugsdbplugin.cpp \
+    imode/drugsdbmode.cpp \
+    imode/drugsdbmodewidget.cpp \
     constants.cpp \
+    tools.cpp \
+    drug.cpp \
     drugdatabasedescription.cpp \
 #    drugdatatabasestep.cpp \
-#    idrugdatabasestep.cpp \
-#    idrugdatabasestepwidget.cpp \
+    idrugdatabasestep.cpp \
+    idrugdatabasestepwidget.cpp \
 #    countries/be/belgishdrugsdatabase.cpp \
 #    countries/ca/canadiandrugsdatabase.cpp \
 #    countries/fr/frenchdrugsdatabasecreator.cpp \
@@ -40,7 +50,8 @@ SOURCES += \
 
 
 FORMS += \
-#    idrugdatabasestepwidget.ui \
+    imode/drugsdbmodewidget.ui \
+    idrugdatabasestepwidget.ui \
 #    countries/za/southafricandrugsdatabase.ui \
 #    countries/us/fdadrugsdatabasewidget.ui \
 #    countries/pt/portuguesedrugsdatabase.ui \

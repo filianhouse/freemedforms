@@ -53,7 +53,7 @@
 //  </description>
 
 //</DrugDbDescriptor>
-using namespace DrugsDB;
+using namespace DrugsDb;
 
 namespace {
 const char * const TAG_ROOT = "DrugDbDescriptor";

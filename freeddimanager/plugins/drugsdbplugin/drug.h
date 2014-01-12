@@ -23,52 +23,97 @@
  *  Contributors:                                                          *
  *       NAME <MAIL@ADDRESS.COM>                                           *
  ***************************************************************************/
-#ifndef DDIMANAGER_DRUGSDBPLUGIN_H
-#define DDIMANAGER_DRUGSDBPLUGIN_H
+#ifndef DDIMANAGER_DRUGSDB_DRUG_H
+#define DDIMANAGER_DRUGSDB_DRUG_H
 
-#include <extensionsystem/iplugin.h>
+// TODO: This class (as DrugComponent) is used in FreeDDIManager and FreeDiams/FreeMedForms, we should include it in the MedicalUtils lib
 
-QT_BEGIN_NAMESPACE
-class QAction;
-QT_END_NAMESPACE
+#include <QVariant>
 
 /**
- * \file drugsbdplugin.h
+ * \file drug.h
  * \author Eric Maeker
  * \version 0.10.0
- * \date 11 Janv 2014
+ * \date 11 Jan 2014
 */
 
 namespace DrugsDb {
 namespace Internal {
-class DrugsDbMode;
+class ComponentPrivate;
+class DrugPrivate;
+}
 
-class DrugsDbPlugin : public ExtensionSystem::IPlugin
+class Component
 {
-    Q_OBJECT
-    Q_PLUGIN_METADATA(IID "org.freemedforms.FreeDDIManager.DrugsDbPlugin" FILE "DrugsDb.json")
-
 public:
-    DrugsDbPlugin();
-    ~DrugsDbPlugin();
+    enum References {
+        MID = 0,
+        Name,
+        Strength,
+        StrengthUnit,
+        Dose,
+        DoseUnit,
+        Nature,
+        NatureLink,
+        AtcIds
+    };
 
-    bool initialize(const QStringList &arguments, QString *errorMessage = 0);
-    void extensionsInitialized();
+    Component();
+    ~Component();
 
-    ExtensionSystem::IPlugin::ShutdownFlag aboutToShutdown();
-
-
-//#ifdef WITH_TESTS
-//private Q_SLOTS:
-//    void initTestCase();
-//    void cleanTestCase();
-//#endif
+    bool setData(const int ref, const QVariant &value, const QString &lang = QString::null);
+    QVariant data(const int ref, const QString &lang = QString::null) const;
 
 private:
-    DrugsDbMode *_mode;
+    Internal::ComponentPrivate *d;
 };
 
-} // namespace Internal
-} // namespace DrugsDb
+class Drug
+{
+public:
+    enum References {
+        Uid1 = 0,
+        Uid2,
+        Uid3,
+        OldUid,
+        DID,
+        SID,            // Source
+        AID,            // Authorization
+        Name,
+        AtcCode,
+        AtcId,
+        Strength,     // 10
+        Forms,
+        Routes,       // 12
+        FormsId,
+        RoutesId,     // 14
+        Authorization,
+        Valid,
+        Marketed,
+        Spc,          // summary of product characteristics (URL)
+        Xml
+    };
 
-#endif // DDIMANAGER_DRUGSDBPLUGIN_H
+    Drug();
+    ~Drug();
+
+    bool setData(const int ref, const QVariant &value, const QString &lang = "xx");
+    QVariant data(const int ref, const QString &lang = "xx") const;
+
+    void addComponent(Component *compo);
+    QVector<Component *> components() const;
+
+    QStringList availableLanguages() const;
+
+    static bool lessThanOnNames(const Drug *s1, const Drug *s2);
+
+private:
+    Internal::DrugPrivate *d;
+};
+
+}  // namespace DrugsDb
+
+QDebug operator<<(QDebug dbg, const DrugsDb::Drug *d);
+
+
+#endif // DDIMANAGER_DRUGSDB_DRUG_H

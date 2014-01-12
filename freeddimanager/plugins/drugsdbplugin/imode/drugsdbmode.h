@@ -19,56 +19,46 @@
  *  If not, see <http://www.gnu.org/licenses/>.                            *
  ***************************************************************************/
 /***************************************************************************
- *  Main Developer: Eric MAEKER, <eric.maeker@gmail.com>                   *
+ *  Main developer: Eric MAEKER, <eric.maeker@gmail.com>                   *
  *  Contributors:                                                          *
  *       NAME <MAIL@ADDRESS.COM>                                           *
+ *       NAME <MAIL@ADDRESS.COM>                                           *
  ***************************************************************************/
-#ifndef DDIMANAGER_DRUGSDBPLUGIN_H
-#define DDIMANAGER_DRUGSDBPLUGIN_H
+#ifndef DDIMANAGER_DRUGSDB_IMODE_H
+#define DDIMANAGER_DRUGSDB_IMODE_H
 
-#include <extensionsystem/iplugin.h>
+#include <coreplugin/modemanager/imode.h>
 
-QT_BEGIN_NAMESPACE
-class QAction;
-QT_END_NAMESPACE
+#include <QObject>
 
 /**
- * \file drugsbdplugin.h
+ * \file drugdruginteractionmode.h
  * \author Eric Maeker
  * \version 0.10.0
- * \date 11 Janv 2014
+ * \date 14 Jan 2014
 */
 
 namespace DrugsDb {
+class DrugsDbModeWidget;
 namespace Internal {
-class DrugsDbMode;
-
-class DrugsDbPlugin : public ExtensionSystem::IPlugin
+class DrugsDbMode : public Core::IMode
 {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID "org.freemedforms.FreeDDIManager.DrugsDbPlugin" FILE "DrugsDb.json")
-
 public:
-    DrugsDbPlugin();
-    ~DrugsDbPlugin();
+    DrugsDbMode(QObject *parent);
+    ~DrugsDbMode();
 
-    bool initialize(const QStringList &arguments, QString *errorMessage = 0);
-    void extensionsInitialized();
+    void postCoreInitialization();
 
-    ExtensionSystem::IPlugin::ShutdownFlag aboutToShutdown();
-
-
-//#ifdef WITH_TESTS
-//private Q_SLOTS:
-//    void initTestCase();
-//    void cleanTestCase();
-//#endif
+#ifdef WITH_TESTS
+    void test_runWidgetTests();
+#endif
 
 private:
-    DrugsDbMode *_mode;
+    DrugsDbModeWidget *_widget;
 };
 
 } // namespace Internal
 } // namespace DrugsDb
 
-#endif // DDIMANAGER_DRUGSDBPLUGIN_H
+#endif // DDIMANAGER_DRUGSDB_IMODE_H

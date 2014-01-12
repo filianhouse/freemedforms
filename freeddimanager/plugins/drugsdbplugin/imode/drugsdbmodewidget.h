@@ -23,52 +23,47 @@
  *  Contributors:                                                          *
  *       NAME <MAIL@ADDRESS.COM>                                           *
  ***************************************************************************/
-#ifndef DDIMANAGER_DRUGSDBPLUGIN_H
-#define DDIMANAGER_DRUGSDBPLUGIN_H
+#ifndef DDIMANAGER_DRUGSDB_DRUGSDBMODEWIDGET_H
+#define DDIMANAGER_DRUGSDB_DRUGSDBMODEWIDGET_H
 
-#include <extensionsystem/iplugin.h>
-
-QT_BEGIN_NAMESPACE
-class QAction;
-QT_END_NAMESPACE
+#include <QWidget>
+#include <QModelIndex>
 
 /**
- * \file drugsbdplugin.h
+ * \file drugsdbmodewidget.h
  * \author Eric Maeker
  * \version 0.10.0
- * \date 11 Janv 2014
+ * \date 14 Oct 2013
 */
 
 namespace DrugsDb {
 namespace Internal {
-class DrugsDbMode;
+class DrugsDbModeWidgetPrivate;
+}
 
-class DrugsDbPlugin : public ExtensionSystem::IPlugin
+class DrugsDbModeWidget : public QWidget
 {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID "org.freemedforms.FreeDDIManager.DrugsDbPlugin" FILE "DrugsDb.json")
-
 public:
-    DrugsDbPlugin();
-    ~DrugsDbPlugin();
-
-    bool initialize(const QStringList &arguments, QString *errorMessage = 0);
-    void extensionsInitialized();
-
-    ExtensionSystem::IPlugin::ShutdownFlag aboutToShutdown();
-
-
-//#ifdef WITH_TESTS
-//private Q_SLOTS:
-//    void initTestCase();
-//    void cleanTestCase();
-//#endif
+    DrugsDbModeWidget(QWidget *parent = 0);
+    ~DrugsDbModeWidget();
 
 private:
-    DrugsDbMode *_mode;
+    void retranslateUi();
+
+protected:
+    void changeEvent(QEvent *e);
+
+#ifdef WITH_TESTS
+public Q_SLOTS:
+    void test_runAllTests();
+    void test_views();
+#endif // WITH_TESTS
+
+private:
+    Internal::DrugsDbModeWidgetPrivate *d;
 };
 
-} // namespace Internal
-} // namespace DrugsDb
+}  // namespace DrugdDb
 
-#endif // DDIMANAGER_DRUGSDBPLUGIN_H
+#endif // DDIMANAGER_DRUGSDB_DRUGSDBMODEWIDGET_H

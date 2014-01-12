@@ -27,8 +27,9 @@
 #ifndef DDIMANAGER_DRUGSDB_IDRUGDATABASESTEP_H
 #define DDIMANAGER_DRUGSDB_IDRUGDATABASESTEP_H
 
-#include <coreplugin/ifullreleasestep.h>
-#include <QHash>
+#include <QObject>
+#include <QList>
+#include <QVector>
 
 /**
  * \file idrugdatabasestep.h
@@ -37,10 +38,15 @@
  * \date 10 Jan 2014
 */
 
+namespace DrugsDB {
+namespace Internal {
+class DrugBaseEssentials;
+}
+}
+
 namespace DrugsDb {
 class Drug;
 namespace Internal {
-class DrugBaseEssentials;
 
 struct SpcContentResources {
     QString type, name, content;
@@ -54,10 +60,23 @@ struct SpcContent {
     QList<SpcContentResources> resources;
 };
 
-class IDrugDatabaseStep : public Core::IFullReleaseStep
+class IDrugDatabaseStep : public QObject // public Core::IFullReleaseStep
 {
     Q_OBJECT
 public:
+    enum ProcessTiming {
+        PreProcess = 0,
+        Process,
+        PostProcess
+    };
+
+    enum SubProcess {
+        Initialization = 0,
+        Main,
+        DataPackSubProcess,
+        Final
+    };
+
     enum ServerOwner {
         Community = 0,
         FrenchAssociation
@@ -102,7 +121,7 @@ public:
     virtual bool checkDatabase();
     virtual bool canCreateDatabase() const;
     virtual bool createDatabase();
-    DrugBaseEssentials *drugEssentialDatabase() const {return _database;}
+    DrugsDB::Internal::DrugBaseEssentials *drugEssentialDatabase() const {return _database;}
 
     bool addRoutes();
     bool recreateRoutes();
@@ -118,11 +137,10 @@ public:
 
     virtual bool downloadSpcContents();
 
-    // Core::IFullReleaseStep interface
-    Steps stepNumber() const {return Core::IFullReleaseStep::DrugsDatabase;}
     virtual bool createTemporaryStorage();
     virtual bool cleanTemporaryStorage();
-    bool startProcessing(ProcessTiming timing, SubProcess subProcess);
+
+    virtual bool startProcessing(ProcessTiming timing, SubProcess subProcess);
 
     // Adding specific interface for the UI <-> step connection
     virtual bool startDownload();
@@ -140,9 +158,23 @@ private Q_SLOTS:
 
 Q_SIGNALS:
     void spcProcessFinished();
+    void subProcessFinished(ProcessTiming timing, SubProcess subProcess);
+
+    void downloadFinished();
+    void postDownloadProcessingFinished();
+    void processFinished();
+
+    // Progress dialog management when threaded
+    void progressLabelChanged(const QString &label);
+    void progress(int value);
+    void progressRangeChanged(int min, int max);
 
 protected:
-    DrugBaseEssentials *_database;
+    DrugsDB::Internal::DrugBaseEssentials *createDrugDatabase(const QString &absPath, const QString &connection);
+    // DrugsDB::Internal::DrugBaseEssentials *drugsBaseFromCache(const QString &connection);
+
+protected:
+    DrugsDB::Internal::DrugBaseEssentials *_database;
 
 private:
     LicenseType _licenseType;
@@ -154,6 +186,7 @@ private:
     QList<QUrl> _spcUrls;
     ProcessTiming _currentTiming;
     SubProcess _currentSubProcess;
+    QVector<DrugsDB::Internal::DrugBaseEssentials*> _drugsDatabases;
 };
 
 }  // namespace Internal

@@ -24,6 +24,7 @@
  *       NAME <MAIL@ADDRESS.COM>                                           *
  ***************************************************************************/
 #include "drugsdbplugin.h"
+#include "imode/drugsdbmode.h"
 
 #include <coreplugin/icore.h>
 //#include <coreplugin/isettings.h>
@@ -49,7 +50,8 @@ using namespace Internal;
 //static inline Core::ISettings *settings() {return Core::ICore::instance()->settings();}
 //static inline Core::ContextManager *contextManager() { return Core::ICore::instance()->contextManager(); }
 
-DrugsDbPlugin::DrugsDbPlugin()
+DrugsDbPlugin::DrugsDbPlugin() :
+    _mode(0)
 {
     if (Utils::Log::warnPluginsCreation())
         qWarning() << "Creating DrugsDbPlugin";
@@ -59,6 +61,8 @@ DrugsDbPlugin::DrugsDbPlugin()
 DrugsDbPlugin::~DrugsDbPlugin()
 {
     qWarning() << "DrugsDbPlugin::~DrugsDbPlugin()";
+    delete _mode;
+    _mode = 0;
 }
 
 bool DrugsDbPlugin::initialize(const QStringList &arguments, QString *errorMessage)
@@ -67,6 +71,9 @@ bool DrugsDbPlugin::initialize(const QStringList &arguments, QString *errorMessa
     Q_UNUSED(errorMessage);
     if (Utils::Log::warnPluginsCreation())
         qWarning() << "DrugsDbPlugin::initialize";
+
+    _mode = new DrugsDbMode(this);
+    addObject(_mode);
 
     // add plugin info page
     addAutoReleasedObject(new Core::PluginAboutPage(pluginSpec(), this));
@@ -91,6 +98,7 @@ ExtensionSystem::IPlugin::ShutdownFlag DrugsDbPlugin::aboutToShutdown()
     // Here you still have a full access to
     //   Core::ICore::instance()
     // And all its objects (user(), patient(), settings(), theme()...).
+    removeObject(_mode);
     return SynchronousShutdown;
 }
 

@@ -31,8 +31,8 @@
 
 #include "idrugdatabasestepwidget.h"
 #include "idrugdatabasestep.h"
-#include <drugsdb/ddi/drugdruginteractioncore.h>
-#include <drugsdb/drugsdbcore.h>
+//#include <drugsdb/ddi/drugdruginteractioncore.h>
+//#include <drugsdb/drugsdbcore.h>
 
 #include <coreplugin/icore.h>
 #include <coreplugin/imainwindow.h>
@@ -52,8 +52,8 @@ using namespace Internal;
 using namespace Trans::ConstantTranslations;
 
 static inline Core::IMainWindow *mainwindow() {return Core::ICore::instance()->mainWindow();}
-static inline DrugsDB::DrugsDBCore *drugsDbCore() {return DrugsDB::DrugsDBCore::instance();}
-static inline DrugsDB::DrugDrugInteractionCore *ddiCore() {return drugsDbCore()->ddiCore();}
+//static inline DrugsDB::DrugsDBCore *drugsDbCore() {return DrugsDB::DrugsDBCore::instance();}
+//static inline DrugsDB::DrugDrugInteractionCore *ddiCore() {return drugsDbCore()->ddiCore();}
 
 namespace DrugsDb {
 namespace Internal {
@@ -224,28 +224,30 @@ void IDrugDatabaseStepWidget::showEvent(QShowEvent *event)
         QWidget::showEvent(event);
         return;
     }
+
+
     // check the possibilities of the ddiCore
-    bool atc = ddiCore()->canAddAtc();
-    if (!atc) {
-        d->ui->addAtc->setChecked(false);
-        d->ui->linkMols->setChecked(false);
-    }
-    d->ui->addAtc->setEnabled(atc);
-    d->ui->linkMols->setEnabled(atc);
+//    bool atc = ddiCore()->canAddAtc();
+//    if (!atc) {
+//        d->ui->addAtc->setChecked(false);
+//        d->ui->linkMols->setChecked(false);
+//    }
+//    d->ui->addAtc->setEnabled(atc);
+//    d->ui->linkMols->setEnabled(atc);
 
-    bool ddi = ddiCore()->canAddDrugDrugInteractions();
-    if (!ddi)
-        d->ui->addDDI->setChecked(false);
-    d->ui->addDDI->setEnabled(ddi);
+//    bool ddi = ddiCore()->canAddDrugDrugInteractions();
+//    if (!ddi)
+//        d->ui->addDDI->setChecked(false);
+//    d->ui->addDDI->setEnabled(ddi);
 
-    bool pim = ddiCore()->canAddPims();
-    if (!pim)
-        d->ui->addPims->setChecked(false);
-    d->ui->addPims->setEnabled(pim);
+//    bool pim = ddiCore()->canAddPims();
+//    if (!pim)
+//        d->ui->addPims->setChecked(false);
+//    d->ui->addPims->setEnabled(pim);
 
-    bool preg = ddiCore()->canAddPregnancyChecking();
-    if (!preg)
-        d->ui->addPreg->setChecked(false);
-    d->ui->addPreg->setEnabled(preg);
+//    bool preg = ddiCore()->canAddPregnancyChecking();
+//    if (!preg)
+//        d->ui->addPreg->setChecked(false);
+//    d->ui->addPreg->setEnabled(preg);
     QWidget::showEvent(event);
 }

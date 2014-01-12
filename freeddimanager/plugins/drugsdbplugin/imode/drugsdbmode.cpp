@@ -33,28 +33,71 @@
  *   POSSIBILITY OF SUCH DAMAGE.                                           *
  ***************************************************************************/
 /***************************************************************************
- *  Main Developer: Eric MAEKER, <eric.maeker@gmail.com>                   *
+ *  Main developer: Eric MAEKER, <eric.maeker@gmail.com>                   *
  *  Contributors:                                                          *
  *       NAME <MAIL@ADDRESS.COM>                                           *
  ***************************************************************************/
-#ifndef DDIMANAGER_DRUGSDBPLUGIN_CONSTANTS_H
-#define DDIMANAGER_DRUGSDBPLUGIN_CONSTANTS_H
+#include "drugsdbmode.h"
+#include "drugsdbmodewidget.h"
+#include <drugsdbplugin/constants.h>
+//#include <ddiplugin/constants.h>
 
-/**
- * \file constants.h
- * \author Eric Maeker
- * \version 0.10.0
- * \date 11 Jan 2014
-*/
+#include <coreplugin/icore.h>
+#include <coreplugin/theme.h>
+//#include <coreplugin/modemanager/modemanager.h>
+//#include <coreplugin/actionmanager/actionmanager.h>
+//#include <coreplugin/contextmanager/contextmanager.h>
+//#include <coreplugin/constants_menus.h>
+//#include <coreplugin/constants_icons.h>
 
-namespace DrugsDb {
-namespace Constants {
+#include <translationutils/constants.h>
 
-const char * const MODE_DRUGSDB = "mDrugsDb";
+using namespace DrugsDb;
+using namespace Internal;
+using namespace Trans::ConstantTranslations;
 
-const char * const ICON_DRUGSCOUNTRYDATABASE = "drugsdatabase.png";
+//static inline Core::ModeManager *modeManager() { return Core::ICore::instance()->modeManager(); }
+//static inline Core::ActionManager *actionManager() { return Core::ICore::instance()->actionManager(); }
+static inline Core::ITheme *theme() { return Core::ICore::instance()->theme(); }
 
-}  //  End namespace Constants
-}  //  End namespace DrugsDb
+DrugsDbMode::DrugsDbMode(QObject *parent) :
+    Core::IMode(parent),
+    _widget(0)
+{
+    setDisplayName("DrugsDb");
+    setIcon(theme()->icon(Constants::ICON_DRUGSCOUNTRYDATABASE, Core::ITheme::BigIcon));
+    setPriority(10);
+    setId(Constants::MODE_DRUGSDB);
+//    Core::Context context(Constants::C_PATIENTS, Constants::C_PATIENTS_SEARCH);
+//    setContext(context);
+    setPatientBarVisibility(false);
 
-#endif // DDIMANAGER_DRUGSDBPLUGIN_CONSTANTS_H
+//    // Add the new patient action in the mode manager
+//    Core::Command *cmd = actionManager()->command(Core::Constants::A_PATIENT_NEW);
+//    modeManager()->addAction(cmd->action(), Core::Constants::P_MODE_PATIENT_SEARCH);
+
+    // create the mode widget
+    _widget = new DrugsDbModeWidget;
+//    _widget->initialize();
+    setWidget(_widget);
+}
+
+DrugsDbMode::~DrugsDbMode()
+{
+    // TODO: this causes a segfault
+//    if (_widget)
+//        delete _widget;
+}
+
+void DrugsDbMode::postCoreInitialization()
+{
+}
+
+#ifdef WITH_TESTS
+
+void DrugsDbMode::test_runWidgetTests()
+{
+    // _widget->test_runAllTests();
+}
+
+#endif

@@ -30,17 +30,17 @@
  */
 
 #include "idrugdatabasestep.h"
+#include "drugdatabasedescription.h"
+#include "tools.h"
+#include "drug.h"
 //#include "routesmodel.h"
-//#include "tools.h"
 //#include "drugsdbcore.h"
-//#include "drugdatabasedescription.h"
-//#include "drug.h"
 //#include <drugsdb/ddi/drugdruginteractioncore.h>
 
-//#include <drugsbaseplugin/drugbaseessentials.h>
-//#include <drugsbaseplugin/constants_databaseschema.h>
+#include <drugsbaseplugin/drugbaseessentials.h>
+#include <drugsbaseplugin/constants_databaseschema.h>
 
-//#include <coreplugin/ftb_constants.h>
+#include <coreplugin/constants_tokensandsettings.h>
 
 //#include <datapackplugin/datapackcore.h>
 //#include <datapackplugin/datapackquery.h>
@@ -63,8 +63,9 @@
 
 #include <QDebug>
 
+using namespace DrugsDB;
 using namespace DrugsDb;
-using namespace Internal;
+using namespace DrugsDb::Internal;
 using namespace Trans::ConstantTranslations;
 
 //static inline DrugsDb::DrugsDBCore *dbCore() {return DrugsDb::DrugsDBCore::instance();}
@@ -73,14 +74,14 @@ using namespace Trans::ConstantTranslations;
 
 /*! Constructor of the DrugsDb::IDrugDatabaseStep class */
 IDrugDatabaseStep::IDrugDatabaseStep(QObject *parent) :
-    Core::IFullReleaseStep(parent),
+    QObject(parent),
     _database(0),
     _licenseType(Free),
     _serverOwner(Community),
     _spcDefaultEncoding("UTF-8"),
     _sid(-1)
 {
-    setObjectName("IDrugDatabaseStep");
+    setObjectName("FreeDDIManager::IDrugDatabaseStep");
     _outputFileName = "master.db";
 }
 
@@ -209,7 +210,7 @@ bool IDrugDatabaseStep::canCreateDatabase() const
  * Create the DrugDatabase pointer according to the settings of the object.
  * If you call this member many times, only one database will be created.
  * Does not populate it with drugs but with non-free data if required.
- * \sa DrugDB::DrugsDBCore::createDrugDatabase()
+ * \sa createDrugDatabase()
  */
 bool IDrugDatabaseStep::createDatabase()
 {
@@ -218,7 +219,7 @@ bool IDrugDatabaseStep::createDatabase()
     Q_EMIT progressLabelChanged(tr("Creating database"));
     Q_EMIT progressRangeChanged(0, 4);
     Q_EMIT progress(0);
-    _database = dbCore()->createDrugDatabase(absoluteFilePath(), _connection);
+    _database = createDrugDatabase(absoluteFilePath(), _connection);
     if (!_database) {
         LOG_ERROR("Database not created: " + _connection);
         return false;
@@ -245,14 +246,14 @@ bool IDrugDatabaseStep::createDatabase()
         qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
         Q_EMIT progress(3);
         qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
-        if (!ddiCore()->isAtcInstalledInDatabase(_database)) {
-            if (!ddiCore()->addAtcDataToDatabase(_database)) {
-                LOG_ERROR("Unable to add interaction data");
-                Q_EMIT progress(4);
-                qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
-                return false;
-            }
-        }
+//        if (!ddiCore()->isAtcInstalledInDatabase(_database)) {
+//            if (!ddiCore()->addAtcDataToDatabase(_database)) {
+//                LOG_ERROR("Unable to add interaction data");
+//                Q_EMIT progress(4);
+//                qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
+//                return false;
+//            }
+//        }
     }
     Q_EMIT progress(4);
     qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
@@ -271,60 +272,60 @@ bool IDrugDatabaseStep::addRoutes()
         return true;
     }
 
-    QString content = Utils::readTextFile(RoutesModel::routeCsvAbsoluteFile());
-    if (content.isEmpty()) {
-        LOG_ERROR(QString("Routes file does not exist. File: %1").arg(RoutesModel::routeCsvAbsoluteFile()));
-        return false;
-    }
-    LOG("Adding routes to database from " + RoutesModel::routeCsvAbsoluteFile());
-    QSqlQuery query(_database->database());
+//    QString content = Utils::readTextFile(RoutesModel::routeCsvAbsoluteFile());
+//    if (content.isEmpty()) {
+//        LOG_ERROR(QString("Routes file does not exist. File: %1").arg(RoutesModel::routeCsvAbsoluteFile()));
+//        return false;
+//    }
+//    LOG("Adding routes to database from " + RoutesModel::routeCsvAbsoluteFile());
+//    QSqlQuery query(_database->database());
 
-    // Read file
-    const QStringList &lines = content.split("\n", QString::SkipEmptyParts);
-    LOG(QString("Reading %1 lines").arg(lines.count()));
-    foreach(const QString &line, lines) {
-        if (line.startsWith("--"))
-            continue;
-        int id = 0;
-        int rid = 0;
-        QMultiHash<QString, QVariant> trLabels;
-        QString systemic;
-        // Parse line
-        foreach(QString value, line.split(",")) {
-            value = value.trimmed();
-            if (id==0) {
-                // is RID
-                rid = value.toInt();
-                ++id;
-                continue;
-            }
-            ++id;
-            value = value.remove("\"");
-            int sep = value.indexOf(":");
-            QString lang = value.left(sep);
-            if (lang.compare("systemic") == 0) {
-                systemic = value.mid(sep + 1);
-            } else {
-                trLabels.insertMulti(lang, value.mid(sep + 1));
-            }
-        }
-        // Push to database
-        int masterLid = Tools::addLabels(_database, -1, trLabels);
-        if (masterLid == -1) {
-            LOG_ERROR("Route not integrated");
-            continue;
-        }
-        query.prepare(_database->prepareInsertQuery(DrugsDB::Constants::Table_ROUTES));
-        query.bindValue(DrugsDB::Constants::ROUTES_RID, rid);
-        query.bindValue(DrugsDB::Constants::ROUTES_MASTERLID, masterLid);
-        query.bindValue(DrugsDB::Constants::ROUTES_SYSTEMIC, systemic);
-        if (!query.exec()) {
-            LOG_QUERY_ERROR(query);
-            return false;
-        }
-        query.finish();
-    }
-    LOG("Routes saved");
+//    // Read file
+//    const QStringList &lines = content.split("\n", QString::SkipEmptyParts);
+//    LOG(QString("Reading %1 lines").arg(lines.count()));
+//    foreach(const QString &line, lines) {
+//        if (line.startsWith("--"))
+//            continue;
+//        int id = 0;
+//        int rid = 0;
+//        QMultiHash<QString, QVariant> trLabels;
+//        QString systemic;
+//        // Parse line
+//        foreach(QString value, line.split(",")) {
+//            value = value.trimmed();
+//            if (id==0) {
+//                // is RID
+//                rid = value.toInt();
+//                ++id;
+//                continue;
+//            }
+//            ++id;
+//            value = value.remove("\"");
+//            int sep = value.indexOf(":");
+//            QString lang = value.left(sep);
+//            if (lang.compare("systemic") == 0) {
+//                systemic = value.mid(sep + 1);
+//            } else {
+//                trLabels.insertMulti(lang, value.mid(sep + 1));
+//            }
+//        }
+//        // Push to database
+//        int masterLid = Tools::addLabels(_database, -1, trLabels);
+//        if (masterLid == -1) {
+//            LOG_ERROR("Route not integrated");
+//            continue;
+//        }
+//        query.prepare(_database->prepareInsertQuery(DrugsDB::Constants::Table_ROUTES));
+//        query.bindValue(DrugsDB::Constants::ROUTES_RID, rid);
+//        query.bindValue(DrugsDB::Constants::ROUTES_MASTERLID, masterLid);
+//        query.bindValue(DrugsDB::Constants::ROUTES_SYSTEMIC, systemic);
+//        if (!query.exec()) {
+//            LOG_QUERY_ERROR(query);
+//            return false;
+//        }
+//        query.finish();
+//    }
+//    LOG("Routes saved");
     return true;
 }
 
@@ -333,7 +334,8 @@ bool IDrugDatabaseStep::recreateRoutes()
 {
     if (!checkDatabase())
         return false;
-    Tools::executeSqlQuery(_database->prepareDeleteQuery(DrugsDB::Constants::Table_ROUTES), _connection);
+    QSqlDatabase db = _database->database();
+    _database->executeSQL(_database->prepareDeleteQuery(DrugsDB::Constants::Table_ROUTES), db);
     return addRoutes();
 }
 
@@ -524,14 +526,14 @@ bool IDrugDatabaseStep::saveDrugsIntoDatabase(QVector<Drug *> drugs)
     using namespace DrugsDB::Constants;
     QSqlDatabase db = _database->database();
     db.transaction();
-    Tools::executeSqlQuery(_database->prepareDeleteQuery(Table_MASTER, w), _connection);
-    Tools::executeSqlQuery(_database->prepareDeleteQuery(Table_DRUGS, w), _connection);
-    Tools::executeSqlQuery(_database->prepareDeleteQuery(Table_COMPO, w), _connection);
-    Tools::executeSqlQuery(_database->prepareDeleteQuery(Table_DRUG_ROUTES, w), _connection);
-    Tools::executeSqlQuery(_database->prepareDeleteQuery(Table_DRUG_FORMS, w), _connection);
-    Tools::executeSqlQuery(_database->prepareDeleteQuery(Table_MOLS, w), _connection);
-    Tools::executeSqlQuery(_database->prepareDeleteQuery(Table_LK_MOL_ATC, w), _connection);
-    Tools::executeSqlQuery(_database->prepareDeleteQuery(Table_PACKAGING, w), _connection);
+    _database->executeSQL(_database->prepareDeleteQuery(Table_MASTER, w), db);
+    _database->executeSQL(_database->prepareDeleteQuery(Table_DRUGS, w), db);
+    _database->executeSQL(_database->prepareDeleteQuery(Table_COMPO, w), db);
+    _database->executeSQL(_database->prepareDeleteQuery(Table_DRUG_ROUTES, w), db);
+    _database->executeSQL(_database->prepareDeleteQuery(Table_DRUG_FORMS, w), db);
+    _database->executeSQL(_database->prepareDeleteQuery(Table_MOLS, w), db);
+    _database->executeSQL(_database->prepareDeleteQuery(Table_LK_MOL_ATC, w), db);
+    _database->executeSQL(_database->prepareDeleteQuery(Table_PACKAGING, w), db);
     // TODO: delete COMPOSITION, DRUG_ROUTES, LABELS_LINK, LABELS */
 
     qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
@@ -643,19 +645,19 @@ bool IDrugDatabaseStep::saveDrugsIntoDatabase(QVector<Drug *> drugs)
 //        routeId
         if (!routes.isEmpty()) {
             // Create the drugs route links
-            QList<int> routesId = dbCore()->routesModel()->routeId(routes);
-            foreach(int rid, routesId) {
-                query.prepare(_database->prepareInsertQuery(Table_DRUG_ROUTES));
-                query.bindValue(DRUG_ROUTES_DID, drug->data(Drug::DID).toInt());
-                query.bindValue(DRUG_ROUTES_RID, rid);
-                if (!query.exec()) {
-                    LOG_QUERY_ERROR_FOR("Drugs", query);
-                    query.finish();
-                    db.rollback();
-                    return false;
-                }
-                query.finish();
-            }
+//            QList<int> routesId = dbCore()->routesModel()->routeId(routes);
+//            foreach(int rid, routesId) {
+//                query.prepare(_database->prepareInsertQuery(Table_DRUG_ROUTES));
+//                query.bindValue(DRUG_ROUTES_DID, drug->data(Drug::DID).toInt());
+//                query.bindValue(DRUG_ROUTES_RID, rid);
+//                if (!query.exec()) {
+//                    LOG_QUERY_ERROR_FOR("Drugs", query);
+//                    query.finish();
+//                    db.rollback();
+//                    return false;
+//                }
+//                query.finish();
+//            }
         }
 
         // Forms
@@ -752,9 +754,10 @@ QHash<int, QString> IDrugDatabaseStep::saveMoleculeIds(const QStringList &molnam
  */
 bool IDrugDatabaseStep::addAtc()
 {
-    if (licenseType() == IDrugDatabaseStep::Free)
-        return false;
-    return ddiCore()->addAtcDataToDatabase(_database);
+//    if (licenseType() == IDrugDatabaseStep::Free)
+//        return false;
+//    return ddiCore()->addAtcDataToDatabase(_database);
+    return false;
 }
 
 /**
@@ -763,9 +766,10 @@ bool IDrugDatabaseStep::addAtc()
  */
 bool IDrugDatabaseStep::addDrugDrugInteractions()
 {
-    if (licenseType() == IDrugDatabaseStep::Free)
-        return false;
-    return ddiCore()->addDrugDrugInteractionsToDatabase(_database);
+//    if (licenseType() == IDrugDatabaseStep::Free)
+//        return false;
+//    return ddiCore()->addDrugDrugInteractionsToDatabase(_database);
+    return false;
 }
 
 /**
@@ -774,9 +778,10 @@ bool IDrugDatabaseStep::addDrugDrugInteractions()
  */
 bool IDrugDatabaseStep::addPims()
 {
-    if (licenseType() == IDrugDatabaseStep::Free)
-        return false;
-    return ddiCore()->addPimsToDatabase(_database);
+//    if (licenseType() == IDrugDatabaseStep::Free)
+//        return false;
+//    return ddiCore()->addPimsToDatabase(_database);
+    return false;
 }
 
 /**
@@ -1252,25 +1257,57 @@ bool IDrugDatabaseStep::registerDataPack()
     QString server;
     if (_licenseType == Free) {
         if (_serverOwner == Community) {
-            server = Core::Constants::SERVER_COMMUNITY_FREE;
+            server = Core::Constants::TAG_SERVER_COMMUNITY_FREE;
         } if (_serverOwner == FrenchAssociation) {
-            server = Core::Constants::SERVER_ASSO_FREE;
+            server = Core::Constants::TAG_SERVER_ASSO_FREE;
         }
     } else {
         if (_serverOwner == Community) {
-            server = Core::Constants::SERVER_COMMUNITY_NONFREE;
+            server = Core::Constants::TAG_SERVER_COMMUNITY_NONFREE;
         } if (_serverOwner == FrenchAssociation) {
-            server = Core::Constants::SERVER_ASSO_NONFREE;
+            server = Core::Constants::TAG_SERVER_ASSO_NONFREE;
         }
     }
-    DataPackPlugin::DataPackQuery query;
-    query.setDescriptionFileAbsolutePath(_datapackDescriptionFilePath);
-    query.setOriginalContentFileAbsolutePath(_outputPath + QDir::separator() + _connection + QDir::separator() + _outputFileName);
-    query.setZipOriginalFile(true);
-    if (!dataPackCore()->registerDataPack(query, server)) {
-        LOG_ERROR("Unable to register datapack for drugs database: " + connectionName());
-        return false;
-    }
-    LOG(QString("Registered datapack for drugs database: %1; in server %2").arg(connectionName()).arg(server));
+//    DataPackPlugin::DataPackQuery query;
+//    query.setDescriptionFileAbsolutePath(_datapackDescriptionFilePath);
+//    query.setOriginalContentFileAbsolutePath(_outputPath + QDir::separator() + _connection + QDir::separator() + _outputFileName);
+//    query.setZipOriginalFile(true);
+//    if (!dataPackCore()->registerDataPack(query, server)) {
+//        LOG_ERROR("Unable to register datapack for drugs database: " + connectionName());
+//        return false;
+//    }
+//    LOG(QString("Registered datapack for drugs database: %1; in server %2").arg(connectionName()).arg(server));
     return true;
 }
+
+/** Create the drug database using the absolute path \e absPath, and the connectionName \e connection */
+DrugsDB::Internal::DrugBaseEssentials *IDrugDatabaseStep::createDrugDatabase(const QString &absPath, const QString &connection)
+{
+    DrugsDB::Internal::DrugBaseEssentials *base = 0; //drugsBaseFromCache(connection);
+    // Already in cache
+//    if (base)
+//        return 0;
+
+    // Create a drugessentialbase
+    base = new DrugsDB::Internal::DrugBaseEssentials;
+    if (!connection.isEmpty())
+        base->setConnectionName(connection);
+    base->initialize(absPath, true);
+    QSqlDatabase db = base->database();
+    if (!db.isOpen() && db.isValid()) {
+        LOG_ERROR("Unable to connect to drugs database: " + connection);
+        return 0;
+    }
+    _drugsDatabases << base;
+    LOG("Drug database created");
+    return base;
+}
+
+//DrugsDB::Internal::DrugBaseEssentials *IDrugDatabaseStep::drugsBaseFromCache(const QString &connection)
+//{
+//    for(int i=0; i < _drugsDatabases.count(); ++i) {
+//        if (_drugsDatabases.at(i)->connectionName() == connection)
+//            return _drugsDatabases.at(i);
+//    }
+//    return 0;
+//}

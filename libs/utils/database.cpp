@@ -2320,7 +2320,7 @@ bool Database::executeSQL(const QStringList &list, QSqlDatabase &DB)
  * \warning The string is splitted with the ; and line feed. All lines starting with
  * \e -- are ignored. Remember to add a ; at the end of your comment lines.
 */
-bool Database::executeSQL(const QString &req, QSqlDatabase & DB)
+bool Database::executeSQL(const QString &req, QSqlDatabase &DB)
 {
     if (req.isEmpty())
         return false;

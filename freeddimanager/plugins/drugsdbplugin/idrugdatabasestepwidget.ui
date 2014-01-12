@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>DrugsDB::Internal::IDrugDatabaseStepWidget</class>
- <widget class="QWidget" name="DrugsDB::Internal::IDrugDatabaseStepWidget">
+ <class>DrugsDb::Internal::IDrugDatabaseStepWidget</class>
+ <widget class="QWidget" name="DrugsDb::Internal::IDrugDatabaseStepWidget">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>518</width>
-    <height>494</height>
+    <height>515</height>
    </rect>
   </property>
   <property name="windowTitle">
