@@ -19,51 +19,53 @@
  *  If not, see <http://www.gnu.org/licenses/>.                            *
  ***************************************************************************/
 /***************************************************************************
- *  Main Developer: Eric MAEKER, <eric.maeker@gmail.com>                   *
+ *   Main developers : Eric Maeker
  *  Contributors:                                                          *
  *       NAME <MAIL@ADDRESS.COM>                                           *
+ *       NAME <MAIL@ADDRESS.COM>                                           *
  ***************************************************************************/
-#ifndef DDIMANAGER_DRUGSDB_DRUGSDBMODEWIDGET_H
-#define DDIMANAGER_DRUGSDB_DRUGSDBMODEWIDGET_H
+#ifndef DDIMANAGER_DRUGSDB_INTERNAL_DRUGSDBMODEWIDGET_H
+#define DDIMANAGER_DRUGSDB_INTERNAL_DRUGSDBMODEWIDGET_H
 
 #include <QWidget>
-#include <QModelIndex>
 
 /**
  * \file drugsdbmodewidget.h
  * \author Eric Maeker
  * \version 0.10.0
- * \date 14 Oct 2013
+ * \date 10 Jan 2014
 */
 
 namespace DrugsDb {
 namespace Internal {
+class IDrugDatabase;
 class DrugsDbModeWidgetPrivate;
-}
 
 class DrugsDbModeWidget : public QWidget
 {
     Q_OBJECT
 public:
-    DrugsDbModeWidget(QWidget *parent = 0);
+    explicit DrugsDbModeWidget(QWidget *parent = 0);
     ~DrugsDbModeWidget();
 
+    void registerDrugDatabase(IDrugDatabase *drugDatabase);
+    // bool initialize(IDrugDatabase *step);
+
+private Q_SLOTS:
+    void on_startJobs_clicked();
+    bool on_download_clicked();
+    void downloadFinished();
+    void changeStepProgressRange(int min, int max);
+
 private:
-    void retranslateUi();
-
-protected:
-    void changeEvent(QEvent *e);
-
-#ifdef WITH_TESTS
-public Q_SLOTS:
-    void test_runAllTests();
-    void test_views();
-#endif // WITH_TESTS
+    void showEvent(QShowEvent *event);
 
 private:
     Internal::DrugsDbModeWidgetPrivate *d;
 };
 
-}  // namespace DrugdDb
+} // namespace Internal
+} // namespace DrugsDb
 
-#endif // DDIMANAGER_DRUGSDB_DRUGSDBMODEWIDGET_H
+#endif // DDIMANAGER_DRUGSDB_INTERNAL_DRUGSDBMODEWIDGET_H
+

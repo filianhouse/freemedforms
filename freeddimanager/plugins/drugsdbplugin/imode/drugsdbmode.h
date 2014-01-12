@@ -39,8 +39,9 @@
 */
 
 namespace DrugsDb {
-class DrugsDbModeWidget;
 namespace Internal {
+class IDrugDatabase;
+class DrugsDbModeWidget;
 class DrugsDbMode : public Core::IMode
 {
     Q_OBJECT
@@ -49,6 +50,8 @@ public:
     ~DrugsDbMode();
 
     void postCoreInitialization();
+
+    void registerDrugDatabase(IDrugDatabase *drugDatabase);
 
 #ifdef WITH_TESTS
     void test_runWidgetTests();

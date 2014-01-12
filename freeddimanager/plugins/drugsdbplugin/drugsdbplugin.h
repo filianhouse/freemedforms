@@ -41,6 +41,7 @@ QT_END_NAMESPACE
 
 namespace DrugsDb {
 namespace Internal {
+class IDrugDatabase;
 class DrugsDbMode;
 
 class DrugsDbPlugin : public ExtensionSystem::IPlugin
@@ -66,6 +67,7 @@ public:
 
 private:
     DrugsDbMode *_mode;
+    QList<IDrugDatabase*> _databases;
 };
 
 } // namespace Internal

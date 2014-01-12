@@ -25,6 +25,7 @@
  ***************************************************************************/
 #include "drugsdbplugin.h"
 #include "imode/drugsdbmode.h"
+#include "idrugdatabase.h"
 
 #include <coreplugin/icore.h>
 //#include <coreplugin/isettings.h>
@@ -50,6 +51,11 @@ using namespace Internal;
 //static inline Core::ISettings *settings() {return Core::ICore::instance()->settings();}
 //static inline Core::ContextManager *contextManager() { return Core::ICore::instance()->contextManager(); }
 
+/**
+ * The core IPlugin object manages:
+ * - the IMode object
+ * - all the IDrugDatabase objects, register them to the IMode and manages their life-cycle
+ */
 DrugsDbPlugin::DrugsDbPlugin() :
     _mode(0)
 {
@@ -72,6 +78,7 @@ bool DrugsDbPlugin::initialize(const QStringList &arguments, QString *errorMessa
     if (Utils::Log::warnPluginsCreation())
         qWarning() << "DrugsDbPlugin::initialize";
 
+    // Create the mode
     _mode = new DrugsDbMode(this);
     addObject(_mode);
 
@@ -85,6 +92,9 @@ void DrugsDbPlugin::extensionsInitialized()
 {
     if (Utils::Log::warnPluginsCreation())
         qWarning() << "DrugsDbPlugin::extensionsInitialized";
+
+    // Create all IDrugDatabase objects
+    // _databases << new DrugDatabase(this);
 }
 
 ExtensionSystem::IPlugin::ShutdownFlag DrugsDbPlugin::aboutToShutdown()
@@ -99,6 +109,10 @@ ExtensionSystem::IPlugin::ShutdownFlag DrugsDbPlugin::aboutToShutdown()
     //   Core::ICore::instance()
     // And all its objects (user(), patient(), settings(), theme()...).
     removeObject(_mode);
+
+    // Delete all drug databases
+    qDeleteAll(_databases);
+
     return SynchronousShutdown;
 }
 

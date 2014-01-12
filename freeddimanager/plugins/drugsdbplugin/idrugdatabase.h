@@ -24,15 +24,15 @@
  *       NAME <MAIL@ADDRESS.COM>                                           *
  *       NAME <MAIL@ADDRESS.COM>                                           *
  ***************************************************************************/
-#ifndef DDIMANAGER_DRUGSDB_IDRUGDATABASESTEP_H
-#define DDIMANAGER_DRUGSDB_IDRUGDATABASESTEP_H
+#ifndef DDIMANAGER_DRUGSDB_IDrugDatabase_H
+#define DDIMANAGER_DRUGSDB_IDrugDatabase_H
 
 #include <QObject>
 #include <QList>
 #include <QVector>
 
 /**
- * \file idrugdatabasestep.h
+ * \file idrugdatabase.h
  * \author Eric Maeker
  * \version 0.10.0
  * \date 10 Jan 2014
@@ -60,7 +60,7 @@ struct SpcContent {
     QList<SpcContentResources> resources;
 };
 
-class IDrugDatabaseStep : public QObject // public Core::IFullReleaseStep
+class IDrugDatabase : public QObject // public Core::IFullReleaseStep
 {
     Q_OBJECT
 public:
@@ -87,8 +87,8 @@ public:
         NonFree
     };
 
-    explicit IDrugDatabaseStep(QObject *parent = 0);
-    ~IDrugDatabaseStep();
+    explicit IDrugDatabase(QObject *parent = 0);
+    ~IDrugDatabase();
 
     virtual void setDisplayName(const QString &name) {_name=name;}
     virtual void setLicenseType(LicenseType type) {_licenseType=type;}
@@ -192,5 +192,5 @@ private:
 }  // namespace Internal
 }  // namespace DrugsDb
 
-#endif  // DDIMANAGER_DRUGSDB_IDRUGDATABASESTEP_H
+#endif  // DDIMANAGER_DRUGSDB_IDrugDatabase_H
 

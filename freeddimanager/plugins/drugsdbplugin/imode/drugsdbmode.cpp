@@ -40,6 +40,7 @@
 #include "drugsdbmode.h"
 #include "drugsdbmodewidget.h"
 #include <drugsdbplugin/constants.h>
+#include <drugsdbplugin/idrugdatabase.h>
 //#include <ddiplugin/constants.h>
 
 #include <coreplugin/icore.h>
@@ -66,7 +67,7 @@ DrugsDbMode::DrugsDbMode(QObject *parent) :
 {
     setDisplayName("DrugsDb");
     setIcon(theme()->icon(Constants::ICON_DRUGSCOUNTRYDATABASE, Core::ITheme::BigIcon));
-    setPriority(10);
+    setPriority(1);
     setId(Constants::MODE_DRUGSDB);
 //    Core::Context context(Constants::C_PATIENTS, Constants::C_PATIENTS_SEARCH);
 //    setContext(context);
@@ -91,6 +92,12 @@ DrugsDbMode::~DrugsDbMode()
 
 void DrugsDbMode::postCoreInitialization()
 {
+}
+
+/** You must register all IDrugDatabase to this Mode. All views will be automatically managed. */
+void DrugsDbMode::registerDrugDatabase(IDrugDatabase *drugDatabase)
+{
+    _widget->registerDrugDatabase(drugDatabase);
 }
 
 #ifdef WITH_TESTS

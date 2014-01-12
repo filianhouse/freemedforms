@@ -25,11 +25,11 @@
  *       NAME <MAIL@ADDRESS.COM>                                           *
  ***************************************************************************/
 /*!
- * \class DrugsDb::IDrugDatabaseStep
+ * \class DrugsDb::IDrugDatabase
  * Default drug database creator step.
  */
 
-#include "idrugdatabasestep.h"
+#include "idrugdatabase.h"
 #include "drugdatabasedescription.h"
 #include "tools.h"
 #include "drug.h"
@@ -72,8 +72,8 @@ using namespace Trans::ConstantTranslations;
 //static inline DrugsDb::DrugDrugInteractionCore *ddiCore() {return dbCore()->ddiCore();}
 //static inline DataPackPlugin::DataPackCore *dataPackCore() {return DataPackPlugin::DataPackCore::instance();}
 
-/*! Constructor of the DrugsDb::IDrugDatabaseStep class */
-IDrugDatabaseStep::IDrugDatabaseStep(QObject *parent) :
+/*! Constructor of the DrugsDb::IDrugDatabase class */
+IDrugDatabase::IDrugDatabase(QObject *parent) :
     QObject(parent),
     _database(0),
     _licenseType(Free),
@@ -81,12 +81,12 @@ IDrugDatabaseStep::IDrugDatabaseStep(QObject *parent) :
     _spcDefaultEncoding("UTF-8"),
     _sid(-1)
 {
-    setObjectName("FreeDDIManager::IDrugDatabaseStep");
+    setObjectName("FreeDDIManager::IDrugDatabase");
     _outputFileName = "master.db";
 }
 
-/*! Destructor of the DrugsDb::IDrugDatabaseStep class */
-IDrugDatabaseStep::~IDrugDatabaseStep()
+/*! Destructor of the DrugsDb::IDrugDatabase class */
+IDrugDatabase::~IDrugDatabase()
 {
     // FIXME: should we delete _database here ?
     delete _database;
@@ -94,13 +94,13 @@ IDrugDatabaseStep::~IDrugDatabaseStep()
 }
 
 /** Define the absolute temporary path to use.*/
-void IDrugDatabaseStep::setTempPath(const QString &absPath)
+void IDrugDatabase::setTempPath(const QString &absPath)
 {
     _tempPath = QDir::cleanPath(absPath);
 }
 
 /** Define the absolute output path to use. The resulting database will be copied into this path. */
-void IDrugDatabaseStep::setOutputPath(const QString &absPath)
+void IDrugDatabase::setOutputPath(const QString &absPath)
 {
     _outputPath = QDir::cleanPath(absPath);
 }
@@ -109,7 +109,7 @@ void IDrugDatabaseStep::setOutputPath(const QString &absPath)
  * Define the connection name of this database.
  * This connection name will be the same as the corresponding QSqlDatabase connection name.
  */
-void IDrugDatabaseStep::setConnectionName(const QString &connection)
+void IDrugDatabase::setConnectionName(const QString &connection)
 {
     _connection = connection;
 }
@@ -118,7 +118,7 @@ void IDrugDatabaseStep::setConnectionName(const QString &connection)
  * Define the absolute output file name to use.
  * \sa setOutputPath()
  */
-void IDrugDatabaseStep::setOutputFileName(const QString &fileName)
+void IDrugDatabase::setOutputFileName(const QString &fileName)
 {
     _outputFileName = fileName;
 }
@@ -128,13 +128,13 @@ void IDrugDatabaseStep::setOutputFileName(const QString &fileName)
  * If you define this URL, the URL will be automatically downloaded during the step processing.
  * Otherwise you can overload the downloadFiles().
  */
-void IDrugDatabaseStep::setDownloadUrl(const QString &url)
+void IDrugDatabase::setDownloadUrl(const QString &url)
 {
     _downloadingUrl = url;
 }
 
 /** Define the absolute path to the finalization SQL script to execute. This is obsolete. */
-void IDrugDatabaseStep::setFinalizationScript(const QString &absPath)
+void IDrugDatabase::setFinalizationScript(const QString &absPath)
 {
     // TODO: add some checks
     _finalizationScriptPath = absPath;
@@ -145,7 +145,7 @@ void IDrugDatabaseStep::setFinalizationScript(const QString &absPath)
  * File name must be an absolute path.
  * \sa setDatapackDescriptionFile()
 */
-void IDrugDatabaseStep::setDatabaseDescriptionFile(const QString &absPath)
+void IDrugDatabase::setDatabaseDescriptionFile(const QString &absPath)
 {
     // TODO: add some checks
     _descriptionFilePath = absPath;
@@ -156,33 +156,33 @@ void IDrugDatabaseStep::setDatabaseDescriptionFile(const QString &absPath)
  * File name must be an absolute path.
  * \sa setDatapackDescriptionFile(), registerDataPack()
 */
-void IDrugDatabaseStep::setDatapackDescriptionFile(const QString &absPath)
+void IDrugDatabase::setDatapackDescriptionFile(const QString &absPath)
 {
     // TODO: add some checks
     _datapackDescriptionFilePath = absPath;
 }
 
 /**
- * \fn void IDrugDatabaseStep::setSpcHtmlFilesDefaultEncoding(const QString &encoding)
+ * \fn void IDrugDatabase::setSpcHtmlFilesDefaultEncoding(const QString &encoding)
  * Define the default encoding to use to open the newly downloaded SPC HTML files. By default,
  * all files are read with the UTF-8 encoding.
  */
 
 
 /** Return the absolute file path of the output database file */
-QString IDrugDatabaseStep::absoluteFilePath() const
+QString IDrugDatabase::absoluteFilePath() const
 {
     return QString("%1/%2").arg(_outputPath).arg(outputFileName());
 }
 
 /** Return the Source Id of the drug database source from the drugs database. */
-int IDrugDatabaseStep::sourceId() const
+int IDrugDatabase::sourceId() const
 {
     return _sid;
 }
 
 /** Check the existence of the database internal pointer and check if the datbase is correctly open */
-bool IDrugDatabaseStep::checkDatabase()
+bool IDrugDatabase::checkDatabase()
 {
     if (!_database) {
         LOG_ERROR("Database not created");
@@ -199,7 +199,7 @@ bool IDrugDatabaseStep::checkDatabase()
 }
 
 /** Return true if the drugs database can be created */
-bool IDrugDatabaseStep::canCreateDatabase() const
+bool IDrugDatabase::canCreateDatabase() const
 {
     return !_connection.isEmpty()
             && !_outputFileName.isEmpty()
@@ -212,7 +212,7 @@ bool IDrugDatabaseStep::canCreateDatabase() const
  * Does not populate it with drugs but with non-free data if required.
  * \sa createDrugDatabase()
  */
-bool IDrugDatabaseStep::createDatabase()
+bool IDrugDatabase::createDatabase()
 {
     if (_database)
         return true;
@@ -261,7 +261,7 @@ bool IDrugDatabaseStep::createDatabase()
 }
 
 /** Add drug routes to the database. This function uses the default routes text file. */
-bool IDrugDatabaseStep::addRoutes()
+bool IDrugDatabase::addRoutes()
 {
     if (!checkDatabase())
         return false;
@@ -330,7 +330,7 @@ bool IDrugDatabaseStep::addRoutes()
 }
 
 /** Recreate drug routes in the database. This function uses the default routes text file. */
-bool IDrugDatabaseStep::recreateRoutes()
+bool IDrugDatabase::recreateRoutes()
 {
     if (!checkDatabase())
         return false;
@@ -340,7 +340,7 @@ bool IDrugDatabaseStep::recreateRoutes()
 }
 
 /** Save the database description and create a drug base source ID */
-bool IDrugDatabaseStep::saveDrugDatabaseDescription()
+bool IDrugDatabase::saveDrugDatabaseDescription()
 {
     if (!checkDatabase())
         return false;
@@ -493,7 +493,7 @@ bool IDrugDatabaseStep::saveDrugDatabaseDescription()
 }
 
 /** Update the INN <-> molecules linking completion percentage */
-bool IDrugDatabaseStep::updateDatabaseCompletion(int completion)
+bool IDrugDatabase::updateDatabaseCompletion(int completion)
 {
     if (!checkDatabase())
         return false;
@@ -512,7 +512,7 @@ bool IDrugDatabaseStep::updateDatabaseCompletion(int completion)
 }
 
 /** Save a list of drugs in the database. The drugs vector will be sorted. */
-bool IDrugDatabaseStep::saveDrugsIntoDatabase(QVector<Drug *> drugs)
+bool IDrugDatabase::saveDrugsIntoDatabase(QVector<Drug *> drugs)
 {
     if (!checkDatabase())
         return false;
@@ -692,7 +692,7 @@ bool IDrugDatabaseStep::saveDrugsIntoDatabase(QVector<Drug *> drugs)
 }
 
 /** Save a list of molecules and return a hash containing the MoleculeID as key and the molecule name os value */
-QHash<int, QString> IDrugDatabaseStep::saveMoleculeIds(const QStringList &molnames)
+QHash<int, QString> IDrugDatabase::saveMoleculeIds(const QStringList &molnames)
 {
     QHash<int, QString> mids;
     if (!checkDatabase())
@@ -752,9 +752,9 @@ QHash<int, QString> IDrugDatabaseStep::saveMoleculeIds(const QStringList &molnam
  * by all non-free steps (that need ATC to compute interactions).
  * \sa DrugsDB::DrugDrugInteractionCore::addAtcDataToDatabase()
  */
-bool IDrugDatabaseStep::addAtc()
+bool IDrugDatabase::addAtc()
 {
-//    if (licenseType() == IDrugDatabaseStep::Free)
+//    if (licenseType() == IDrugDatabase::Free)
 //        return false;
 //    return ddiCore()->addAtcDataToDatabase(_database);
     return false;
@@ -764,9 +764,9 @@ bool IDrugDatabaseStep::addAtc()
  * Add the drug-drug interaction data to the drug database.
  * \sa DrugsDB::DrugDrugInteractionCore::addDrugDrugInteractionsToDatabase()
  */
-bool IDrugDatabaseStep::addDrugDrugInteractions()
+bool IDrugDatabase::addDrugDrugInteractions()
 {
-//    if (licenseType() == IDrugDatabaseStep::Free)
+//    if (licenseType() == IDrugDatabase::Free)
 //        return false;
 //    return ddiCore()->addDrugDrugInteractionsToDatabase(_database);
     return false;
@@ -776,9 +776,9 @@ bool IDrugDatabaseStep::addDrugDrugInteractions()
  * Add the PIMs (potentially inappropriate medication in elderly) data to the drug database.
  * \sa DrugsDB::DrugDrugInteractionCore::addPimsToDatabase()
  */
-bool IDrugDatabaseStep::addPims()
+bool IDrugDatabase::addPims()
 {
-//    if (licenseType() == IDrugDatabaseStep::Free)
+//    if (licenseType() == IDrugDatabase::Free)
 //        return false;
 //    return ddiCore()->addPimsToDatabase(_database);
     return false;
@@ -788,9 +788,9 @@ bool IDrugDatabaseStep::addPims()
  * Add the pregnancy drug compatibility data to the drug database.
  * \sa DrugsDB::DrugDrugInteractionCore::addPregnancyDataToDatabase()
  */
-bool IDrugDatabaseStep::addPregnancyCheckingData()
+bool IDrugDatabase::addPregnancyCheckingData()
 {
-    if (licenseType() == IDrugDatabaseStep::Free)
+    if (licenseType() == IDrugDatabase::Free)
         return false;
 //    return ddiCore()->addPregnancyDataToDatabase(_database);
     return true;
@@ -802,7 +802,7 @@ bool IDrugDatabaseStep::addPregnancyCheckingData()
  * - Download all contents
  * - Add content to the database (also link drug to spc content)
  */
-bool IDrugDatabaseStep::downloadSpcContents()
+bool IDrugDatabase::downloadSpcContents()
 {
     // The Summary of Product Characteristics can be automatically downloaded and
     // inserted in the drugs database. The following code will:
@@ -862,7 +862,7 @@ bool IDrugDatabaseStep::downloadSpcContents()
 /**
  * When all SPC files are downloaded, populate the drugs database.
  */
-bool IDrugDatabaseStep::onAllSpcDownloadFinished()
+bool IDrugDatabase::onAllSpcDownloadFinished()
 {
     // Here all SPC files are downloaded.
     // We need to work a bit on HTML files (getting CSS content, JS scripts...)
@@ -988,7 +988,7 @@ bool IDrugDatabaseStep::onAllSpcDownloadFinished()
  * Save the SPC content.
  * \warning code does not manage duplicates
  */
-bool IDrugDatabaseStep::saveDrugSpc(const SpcContent &content)
+bool IDrugDatabase::saveDrugSpc(const SpcContent &content)
 {
     if (content.html.isEmpty()) {
         LOG_ERROR("SPC content is empty");
@@ -1107,7 +1107,7 @@ bool IDrugDatabaseStep::saveDrugSpc(const SpcContent &content)
 }
 
 /** Create all object path (temp, output, download...) */
-bool IDrugDatabaseStep::createTemporaryStorage()
+bool IDrugDatabase::createTemporaryStorage()
 {
     // Create the tempPath
     if (!QDir().mkpath(_tempPath))
@@ -1127,13 +1127,13 @@ bool IDrugDatabaseStep::createTemporaryStorage()
 }
 
 /** Automatically clean the output database (removes the output file). */
-bool IDrugDatabaseStep::cleanTemporaryStorage()
+bool IDrugDatabase::cleanTemporaryStorage()
 {
     QFile(absoluteFilePath()).remove();
     return true;
 }
 
-bool IDrugDatabaseStep::startProcessing(ProcessTiming timing, SubProcess subProcess)
+bool IDrugDatabase::startProcessing(ProcessTiming timing, SubProcess subProcess)
 {
     bool ok = true;
     _currentTiming = timing;
@@ -1199,7 +1199,7 @@ bool IDrugDatabaseStep::startProcessing(ProcessTiming timing, SubProcess subProc
     return ok;
 }
 
-void IDrugDatabaseStep::onSubProcessFinished()
+void IDrugDatabase::onSubProcessFinished()
 {
     WARN_FUNC << _currentTiming << _currentSubProcess;
     Q_EMIT subProcessFinished(_currentTiming, _currentSubProcess);
@@ -1209,7 +1209,7 @@ void IDrugDatabaseStep::onSubProcessFinished()
  * Download the URL to the tempPath().
  * \sa setDownloadUrl()
  */
-bool IDrugDatabaseStep::startDownload()
+bool IDrugDatabase::startDownload()
 {
     Utils::HttpDownloader *dld = new Utils::HttpDownloader;
     connect(dld, SIGNAL(downloadFinished()), dld, SLOT(deleteLater()));
@@ -1228,7 +1228,7 @@ bool IDrugDatabaseStep::startDownload()
  * Unzip the downloaded file.
  * \sa setDownloadUrl(), downloadFiles()
  */
-bool IDrugDatabaseStep::unzipFiles()
+bool IDrugDatabase::unzipFiles()
 {
     // check file
     QString fileName = tempPath() + QDir::separator() + QFileInfo(downloadUrl()).fileName();
@@ -1248,11 +1248,11 @@ bool IDrugDatabaseStep::unzipFiles()
 
 /**
  * Automatically register the drug database to the DataPackPlugin::DataPackCore according
- * to the DrugsDB::IDrugDatabaseStep::LicenseType and the DrugsDB::IDrugDatabaseStep::ServerOwner
+ * to the DrugsDB::IDrugDatabase::LicenseType and the DrugsDB::IDrugDatabase::ServerOwner
  * of the object.
  * \sa DataPackPlugin::DataPackCore::registerDataPack()
  */
-bool IDrugDatabaseStep::registerDataPack()
+bool IDrugDatabase::registerDataPack()
 {
     QString server;
     if (_licenseType == Free) {
@@ -1281,7 +1281,7 @@ bool IDrugDatabaseStep::registerDataPack()
 }
 
 /** Create the drug database using the absolute path \e absPath, and the connectionName \e connection */
-DrugsDB::Internal::DrugBaseEssentials *IDrugDatabaseStep::createDrugDatabase(const QString &absPath, const QString &connection)
+DrugsDB::Internal::DrugBaseEssentials *IDrugDatabase::createDrugDatabase(const QString &absPath, const QString &connection)
 {
     DrugsDB::Internal::DrugBaseEssentials *base = 0; //drugsBaseFromCache(connection);
     // Already in cache
@@ -1303,7 +1303,7 @@ DrugsDB::Internal::DrugBaseEssentials *IDrugDatabaseStep::createDrugDatabase(con
     return base;
 }
 
-//DrugsDB::Internal::DrugBaseEssentials *IDrugDatabaseStep::drugsBaseFromCache(const QString &connection)
+//DrugsDB::Internal::DrugBaseEssentials *IDrugDatabase::drugsBaseFromCache(const QString &connection)
 //{
 //    for(int i=0; i < _drugsDatabases.count(); ++i) {
 //        if (_drugsDatabases.at(i)->connectionName() == connection)
