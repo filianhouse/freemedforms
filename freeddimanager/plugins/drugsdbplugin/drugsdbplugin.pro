@@ -25,6 +25,7 @@ HEADERS += \
 #    countries/pt/portuguesedrugsdatabase.h \
 #    countries/us/fdadrugsdatabasecreator.h \
 #    countries/za/southafricandrugsdatabase.h \
+    drugdatabasepopulator.h \
 
 
 SOURCES += \
@@ -44,6 +45,7 @@ SOURCES += \
 #    countries/pt/portuguesedrugsdatabase.cpp \
 #    countries/us/fdadrugsdatabasecreator.cpp \
 #    countries/za/southafricandrugsdatabase.cpp \
+    drugdatabasepopulator.cpp \
 
 
 FORMS += \

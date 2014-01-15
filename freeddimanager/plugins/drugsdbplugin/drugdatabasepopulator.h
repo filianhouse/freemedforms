@@ -19,53 +19,54 @@
  *  If not, see <http://www.gnu.org/licenses/>.                            *
  ***************************************************************************/
 /***************************************************************************
- *  Main developer: Eric MAEKER, <eric.maeker@gmail.com>                   *
+ *   Main developers : Eric Maeker
  *  Contributors:                                                          *
  *       NAME <MAIL@ADDRESS.COM>                                           *
  *       NAME <MAIL@ADDRESS.COM>                                           *
  ***************************************************************************/
-#ifndef DRUGSDB_INTERNAL_DRUGBASEESSENTIALS_H
-#define DRUGSDB_INTERNAL_DRUGBASEESSENTIALS_H
+#ifndef DDIMANAGER_DRUGSDBPLUGIN_INTERNAL_DATABASEPOPULATOR_H
+#define DDIMANAGER_DRUGSDBPLUGIN_INTERNAL_DATABASEPOPULATOR_H
 
-#include <drugsbaseplugin/drugsbase_exporter.h>
-#include <utils/database.h>
+#include <QObject>
 
 /**
- * \file drugsbaseessentials.h
- * \author Eric MAEKER <eric.maeker@gmail.com>
+ * \file drugdatabasepopulator.h
+ * \author Eric Maeker
  * \version 0.10.0
- * \date 12 Jan 2014
+ * \date 16 Jan 2014
 */
+
 namespace DrugsDB {
 namespace Internal {
+class DrugBaseEssentials;
+}
+}
 
-class DRUGSBASE_EXPORT DrugBaseEssentials : public Utils::Database
+namespace DrugsDb {
+namespace Internal {
+class DrugDatabasePopulatorPrivate;
+
+class DrugDatabasePopulator : public QObject
 {
+    Q_OBJECT
+
+//protected:
 public:
-    DrugBaseEssentials();
-    virtual ~DrugBaseEssentials() {}
-    void forceFullDatabaseRefreshing();
-    bool initialize(const QString &pathToDb, bool createIfNotExists = false);
+    explicit DrugDatabasePopulator(QObject *parent = 0);
+    bool initialize();
 
-    void setVersion(const QString &version);
-    QString version() const;
-    bool checkDatabaseVersion() const;
+public:
+    ~DrugDatabasePopulator();
 
-    int getSourceId(const QString &drugsDbUid);
-    bool isAtcAvailable() const;
+    bool saveAtcClassification(DrugsDB::Internal::DrugBaseEssentials *database);
+    bool saveDrugDrugInteractions(DrugsDB::Internal::DrugBaseEssentials *database);
 
 private:
-    bool createDatabase(const QString &connectionName , const QString &prefixedDbName,
-                        const Utils::DatabaseConnector &connector,
-                        CreationOption createOption
-                       );
-
-protected:
-    bool m_dbcore_initialized;
-    bool m_isDefaultDb;
+    Internal::DrugDatabasePopulatorPrivate *d;
 };
 
-}  // End namespace Internal
-}  // End namespace DrugsDB
+} // namespace Internal
+} // namespace DrugsDb
 
-#endif // DRUGSDB_INTERNAL_DRUGBASEESSENTIALS_H
+#endif // DDIMANAGER_DRUGSDBPLUGIN_INTERNAL_DATABASEPOPULATOR_H
+

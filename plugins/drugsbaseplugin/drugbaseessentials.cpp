@@ -475,6 +475,19 @@ int DrugBaseEssentials::getSourceId(const QString &drugsDbUid)
     return -1;
 }
 
+/**
+ * Check the database ATC table content.
+ * Returns true if the ATC classification is available in the database.
+ */
+bool DrugBaseEssentials::isAtcAvailable() const
+{
+    QSqlDatabase DB = QSqlDatabase::database(connectionName());
+    if (!connectDatabase(DB, __FILE__, __LINE__))
+        return false;
+    int m = max(DrugsDB::Constants::Table_ATC, DrugsDB::Constants::ATC_ID).toInt();
+    return m > 5000;
+}
+
 bool DrugBaseEssentials::createDatabase(const QString &connection, const QString &prefixedDbName,
                                   const Utils::DatabaseConnector &connector,
                                   CreationOption createOption

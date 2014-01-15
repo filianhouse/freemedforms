@@ -307,8 +307,8 @@ bool FrDrugDatatabase::populateDatabase()
         pos += l.length();
         QStringList line = l.split("\t");
 
-//        if (!drugs.keys().contains(line.at(0).toInt()))
-//            continue;
+        // if (!drugs.keys().contains(line.at(0).toInt()))
+        //     continue;
 
         // 60001288	(1)comprim	(2)00468	(3)CODINE (PHOSPHATE DE) SESQUIHYDRAT	(4)15 mg 	(5)un comprim	(6)SA	(7)1
         Component *compo = new Component;
@@ -352,10 +352,10 @@ bool FrDrugDatatabase::populateDatabase()
     Q_EMIT progressLabelChanged(tr("Running database finalization script"));
     Q_EMIT progressRangeChanged(0, 2);
     Q_EMIT progress(1);
-//    if (!Tools::executeSqlFile(connectionName(), finalizationScript())) {
-//        LOG_ERROR("Can create French DB.");
-//        return false;
-//    }
+    //    if (!Tools::executeSqlFile(connectionName(), finalizationScript())) {
+    //        LOG_ERROR("Can create French DB.");
+    //        return false;
+    //    }
 
     // delete pointers
     qDeleteAll(drugs);
