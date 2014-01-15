@@ -1,3 +1,3 @@
-include(../coreplugin/coreplugin_dependencies.pri)
-include(../ddiplugin/ddiplugin_dependencies.pri)
+include(../coreplugin/coreplugin.pri)
+include(../ddiplugin/ddiplugin.pri)
 include( $${SOURCES_CONTRIBS_PATH}/quazip/quazip.pri )
