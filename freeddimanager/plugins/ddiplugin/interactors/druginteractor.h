@@ -27,6 +27,8 @@
 #ifndef DDIMANAGER_DDIPLUGIN_DRUGINTERACTOR_H
 #define DDIMANAGER_DDIPLUGIN_DRUGINTERACTOR_H
 
+#include <ddiplugin/ddi_exporter.h>
+
 #include <QMultiHash>
 #include <QVariant>
 #include <QString>
@@ -37,12 +39,12 @@
  * \file druginteractor.h
  * \author Eric Maeker
  * \version 0.10.0
- * \date 12 Oct 2013
+ * \date 16 Jan 2014
 */
 
 namespace DDI {
 
-class DrugInteractor
+class DDI_EXPORT DrugInteractor
 {
 public:
     enum DataRepresentation {
