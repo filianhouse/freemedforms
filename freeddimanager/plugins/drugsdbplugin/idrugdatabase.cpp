@@ -137,7 +137,7 @@ void IDrugDatabase::setDownloadUrl(const QString &url)
 void IDrugDatabase::setFinalizationScript(const QString &absPath)
 {
     // TODO: add some checks
-    _finalizationScriptPath = absPath;
+    _finalizationScriptPath = QDir::cleanPath(absPath);
 }
 
 /**
@@ -148,7 +148,7 @@ void IDrugDatabase::setFinalizationScript(const QString &absPath)
 void IDrugDatabase::setDatabaseDescriptionFile(const QString &absPath)
 {
     // TODO: add some checks
-    _descriptionFilePath = absPath;
+    _descriptionFilePath = QDir::cleanPath(absPath);
 }
 
 /**
@@ -159,7 +159,7 @@ void IDrugDatabase::setDatabaseDescriptionFile(const QString &absPath)
 void IDrugDatabase::setDatapackDescriptionFile(const QString &absPath)
 {
     // TODO: add some checks
-    _datapackDescriptionFilePath = absPath;
+    _datapackDescriptionFilePath = QDir::cleanPath(absPath);
 }
 
 /**
@@ -172,7 +172,7 @@ void IDrugDatabase::setDatapackDescriptionFile(const QString &absPath)
 /** Return the absolute file path of the output database file */
 QString IDrugDatabase::absoluteFilePath() const
 {
-    return QString("%1/%2").arg(_outputPath).arg(outputFileName());
+    return QDir::cleanPath(QString("%1/%2").arg(_outputPath).arg(outputFileName()));
 }
 
 /** Return the Source Id of the drug database source from the drugs database. */
