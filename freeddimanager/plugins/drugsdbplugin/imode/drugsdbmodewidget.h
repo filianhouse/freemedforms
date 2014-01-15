@@ -28,6 +28,9 @@
 #define DDIMANAGER_DRUGSDB_INTERNAL_DRUGSDBMODEWIDGET_H
 
 #include <QWidget>
+QT_BEGIN_NAMESPACE
+class QItemSelection;
+QT_END_NAMESPACE
 
 /**
  * \file drugsdbmodewidget.h
@@ -56,10 +59,10 @@ private Q_SLOTS:
     bool on_download_clicked();
     void downloadFinished();
     void changeStepProgressRange(int min, int max);
-    void onCurrentDrugsDatabaseChanged(int);
+    void onCurrentDrugsDatabaseChanged(const QItemSelection &current, const QItemSelection &previous);
 
-private:
-    void showEvent(QShowEvent *event);
+//private:
+//    void showEvent(QShowEvent *event);
 
 private:
     Internal::DrugsDbModeWidgetPrivate *d;

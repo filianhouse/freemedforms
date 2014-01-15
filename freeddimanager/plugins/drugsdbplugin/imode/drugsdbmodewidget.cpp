@@ -45,6 +45,7 @@
 #include <QProgressDialog>
 #include <QPointer>
 #include <QVector>
+#include <QDir>
 
 #include <QDebug>
 
@@ -76,21 +77,35 @@ public:
     {
     }
 
-    void updateAvailableDatabaseCombo()
+    void updateAvailableDatabase()
     {
-        ui->availableDatabases->clear();
+        QObject::disconnect(ui->availableListWidget->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), q, SLOT(onCurrentDrugsDatabaseChanged(QItemSelection,QItemSelection)));
+        ui->availableListWidget->clear();
         foreach(IDrugDatabase *db, _databases) {
-            ui->availableDatabases->addItem(db->displayName());
+            ui->availableListWidget->addItem(db->displayName());
         }
-        ui->availableDatabases->setCurrentIndex(-1);
+        ui->availableListWidget->setCurrentIndex(QModelIndex());
+        QObject::connect(ui->availableListWidget->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), q, SLOT(onCurrentDrugsDatabaseChanged(QItemSelection,QItemSelection)));
     }
 
     // Returns zero in case of error
     IDrugDatabase *currentDatabase()
     {
-        if (!IN_RANGE_STRICT_MAX(ui->availableDatabases->currentIndex(), 0, _databases.count()))
+        int row = ui->availableListWidget->selectionModel()->currentIndex().row();
+        if (!IN_RANGE_STRICT_MAX(row, 0, _databases.count()))
             return 0;
-        return _databases.at(ui->availableDatabases->currentIndex());
+        return _databases.at(row);
+    }
+
+    // Set UI 'modifiers' enabled state
+    void setUiEnabled(bool enabled)
+    {
+        ui->freeGroup->setEnabled(enabled);
+        ui->nonFreeGroup->setEnabled(enabled);
+        ui->download->setEnabled(enabled);
+        ui->startJobs->setEnabled(enabled);
+        if (!enabled)
+            ui->title->setText(QCoreApplication::translate("DrugsDbModeWidget", "Select the drug database to create in the view"));
     }
 
 public:
@@ -112,7 +127,8 @@ DrugsDbModeWidget::DrugsDbModeWidget(QWidget *parent) :
     d->ui = new Ui::DrugsDbModeWidget();
     d->ui->setupUi(this);
     d->ui->progressBar->hide();
-    connect(d->ui->availableDatabases, SIGNAL(activated(int)), this, SLOT(onCurrentDrugsDatabaseChanged(int)));
+
+    onCurrentDrugsDatabaseChanged(QItemSelection(), QItemSelection());
 }
 
 /*! Destructor of the DrugsDb::Internal::DrugsDbModeWidget class */
@@ -124,21 +140,10 @@ DrugsDbModeWidget::~DrugsDbModeWidget()
     d = 0;
 }
 
-///*! Initializes the object with the default values. Return true if initialization was completed. */
-//bool DrugsDbModeWidget::initialize(IDrugDatabaseStep *step)
-//{
-//    Q_ASSERT(step);
-//    if (!step)
-//        return false;
-//    d->_step = step;
-//    d->ui->title->setText(step->displayName());
-//    return true;
-//}
-
 void DrugsDbModeWidget::registerDrugDatabase(IDrugDatabase *drugDatabase)
 {
     d->_databases << drugDatabase;
-    d->updateAvailableDatabaseCombo();
+    d->updateAvailableDatabase();
 }
 
 void DrugsDbModeWidget::on_startJobs_clicked()
@@ -250,58 +255,62 @@ void DrugsDbModeWidget::changeStepProgressRange(int min, int max)
 }
 
 /** When user select a new current database, update the information */
-void DrugsDbModeWidget::onCurrentDrugsDatabaseChanged(int)
+void DrugsDbModeWidget::onCurrentDrugsDatabaseChanged(const QItemSelection &current, const QItemSelection &previous)
 {
+    d->setUiEnabled(false);
     IDrugDatabase *base = d->currentDatabase();
     if (!base)
         return;
-    d->ui->output->setText(base->outputPath() + "  ..  " + base->outputFileName());
+    d->setUiEnabled(true);
+    d->ui->output->setText(base->outputPath() + QDir::separator() + base->outputFileName());
+    d->ui->descriptionFile->setText(base->databaseDescriptionFile());
+    d->ui->title->setText(base->displayName());
 }
 
-void DrugsDbModeWidget::showEvent(QShowEvent *event)
-{
-    IDrugDatabase *base = d->currentDatabase();
-    if (!base)
-        return;
-    if (base->licenseType() == IDrugDatabase::Free) {
-        d->ui->addAtc->setChecked(false);
-        d->ui->linkMols->setChecked(false);
-        d->ui->addDDI->setChecked(false);
-        d->ui->addPims->setChecked(false);
-        d->ui->addPreg->setChecked(false);
-
-        d->ui->addAtc->setEnabled(false);
-        d->ui->linkMols->setEnabled(false);
-        d->ui->addDDI->setEnabled(false);
-        d->ui->addPims->setEnabled(false);
-        d->ui->addPreg->setEnabled(false);
-        QWidget::showEvent(event);
-        return;
-    }
-
-
-    // check the possibilities of the ddiCore
-//    bool atc = ddiCore()->canAddAtc();
-//    if (!atc) {
+//void DrugsDbModeWidget::showEvent(QShowEvent *event)
+//{
+//    IDrugDatabase *base = d->currentDatabase();
+//    if (!base)
+//        return;
+//    if (base->licenseType() == IDrugDatabase::Free) {
 //        d->ui->addAtc->setChecked(false);
 //        d->ui->linkMols->setChecked(false);
-//    }
-//    d->ui->addAtc->setEnabled(atc);
-//    d->ui->linkMols->setEnabled(atc);
-
-//    bool ddi = ddiCore()->canAddDrugDrugInteractions();
-//    if (!ddi)
 //        d->ui->addDDI->setChecked(false);
-//    d->ui->addDDI->setEnabled(ddi);
-
-//    bool pim = ddiCore()->canAddPims();
-//    if (!pim)
 //        d->ui->addPims->setChecked(false);
-//    d->ui->addPims->setEnabled(pim);
-
-//    bool preg = ddiCore()->canAddPregnancyChecking();
-//    if (!preg)
 //        d->ui->addPreg->setChecked(false);
-//    d->ui->addPreg->setEnabled(preg);
-    QWidget::showEvent(event);
-}
+
+//        d->ui->addAtc->setEnabled(false);
+//        d->ui->linkMols->setEnabled(false);
+//        d->ui->addDDI->setEnabled(false);
+//        d->ui->addPims->setEnabled(false);
+//        d->ui->addPreg->setEnabled(false);
+//        QWidget::showEvent(event);
+//        return;
+//    }
+
+
+//    // check the possibilities of the ddiCore
+////    bool atc = ddiCore()->canAddAtc();
+////    if (!atc) {
+////        d->ui->addAtc->setChecked(false);
+////        d->ui->linkMols->setChecked(false);
+////    }
+////    d->ui->addAtc->setEnabled(atc);
+////    d->ui->linkMols->setEnabled(atc);
+
+////    bool ddi = ddiCore()->canAddDrugDrugInteractions();
+////    if (!ddi)
+////        d->ui->addDDI->setChecked(false);
+////    d->ui->addDDI->setEnabled(ddi);
+
+////    bool pim = ddiCore()->canAddPims();
+////    if (!pim)
+////        d->ui->addPims->setChecked(false);
+////    d->ui->addPims->setEnabled(pim);
+
+////    bool preg = ddiCore()->canAddPregnancyChecking();
+////    if (!preg)
+////        d->ui->addPreg->setChecked(false);
+////    d->ui->addPreg->setEnabled(preg);
+//    QWidget::showEvent(event);
+//}
