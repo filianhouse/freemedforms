@@ -28,16 +28,19 @@
  * \class DrugsDb::Internal::DatabasePopulator
  * Populate a Drug database with DDI information (ATC codes, DDI, PIMs and
  * all other interaction engines data).\n
+ * Drugs database are represented by DrugsDB::Internal::DrugBaseEssentials while
+ * FreeDDIManager database is represented by DDI::Internal::DDIDatabase.
  */
 
 #include "drugdatabasepopulator.h"
 #include <drugsdbplugin/tools.h>
 
+#include <ddiplugin/ddicore.h>
+#include <ddiplugin/constants.h>
+#include <ddiplugin/database/ddidatabase.h>
+#include <ddiplugin/atc/atctablemodel.h>
 #include <ddiplugin/ddi/drugdruginteraction.h>
 #include <ddiplugin/interactors/druginteractor.h>
-#include <ddiplugin/ddicore.h>
-#include <ddiplugin/database/ddidatabase.h>
-#include <ddiplugin/constants.h>
 
 #include <drugsbaseplugin/drugbaseessentials.h>
 #include <drugsbaseplugin/constants_databaseschema.h>
@@ -166,7 +169,7 @@ public:
 
         // add pmids references
         if (id>=0) {
-            foreach(const QString &pmid, parent->childClassificationPMIDs(interactor->data(DrugInteractor::InitialLabel).toString())) {
+            foreach(const QString &pmid, parent->childClassificationPMIDs(interactor->data(DrugInteractor::Uid).toString())) {
                 m_iamTreePmids.insertMulti(id, pmid);
             }
         }
@@ -178,7 +181,7 @@ public:
                 DrugInteractor *child = 0;
                 for(int j=0; j < completeList.count();++j) {
                     DrugInteractor *testMe = completeList.at(j);
-                    if (testMe->data(DrugInteractor::InitialLabel).toString()==childId) {
+                    if (testMe->data(DrugInteractor::Uid).toString()==childId) {
                         child = testMe;
                         break;
                     }
@@ -201,12 +204,12 @@ public:
 
         // Clear database first
         QString req;
-//        req = database->prepareDeleteQuery(DrugsDB::Constants::Table_INTERACTIONS);
-//        DrugsDB::Tools::executeSqlQuery(req, database->connectionName(), __FILE__, __LINE__);
-//        req = database->prepareDeleteQuery(DrugsDB::Constants::Table_IAKNOWLEDGE);
-//        DrugsDB::Tools::executeSqlQuery(req, database->connectionName(), __FILE__, __LINE__);
-//        req = database->prepareDeleteQuery(DrugsDB::Constants::Table_IA_IAK);
-//        DrugsDB::Tools::executeSqlQuery(req, database->connectionName(), __FILE__, __LINE__);
+        req = database->prepareDeleteQuery(DrugsDB::Constants::Table_INTERACTIONS);
+        database->executeSQL(req, db);
+        req = database->prepareDeleteQuery(DrugsDB::Constants::Table_IAKNOWLEDGE);
+        database->executeSQL(req, db);
+        req = database->prepareDeleteQuery(DrugsDB::Constants::Table_IA_IAK);
+        database->executeSQL(req, db);
 
         db.transaction();
 
@@ -221,8 +224,8 @@ public:
             const QString &second = ddi->secondInteractor();
             DrugInteractor *firstInteractor = 0;
             DrugInteractor *secondInteractor = 0;
-            for(int i=0; i < interactors.count();++i) {
-                const QString &id = interactors.at(i)->data(DrugInteractor::InitialLabel).toString();
+            for(int i=0; i < interactors.count(); ++i) {
+                const QString &id = interactors.at(i)->data(DrugInteractor::Uid).toString();
                 if (!firstFound) {
                     if (id==first) {
                         firstFound = true;
@@ -239,13 +242,17 @@ public:
                     break;
             }
             bool ok = (firstFound && secondFound);
+
             if (!ok) {
                 LOG_ERROR_FOR(q, QString("*** Interactors not found: \n  %1 - %2 (%3)")
-                          .arg(ddi->firstInteractor())
-                          .arg(ddi->secondInteractor())
-                          .arg(ddi->levelName()));
+                              .arg(firstFound?ddi->firstInteractor():ddi->firstInteractor()+"*")
+                              .arg(secondFound?ddi->secondInteractor():ddi->secondInteractor()+"*")
+                              .arg(ddi->levelName()));
                 continue;
             }
+
+            qWarning() << "\n\n" << first << second << firstFound << secondFound;
+            qWarning() << firstInteractor << secondInteractor;
 
             QSqlQuery query(db);
             QString req;
@@ -253,8 +260,8 @@ public:
             int iak_id = -1;
 
             // for all atc of firstInteractor & all atc of secondInteractor -> add an interaction + keep the references of the DDI
-            QStringList atc1 = firstInteractor->data(DrugInteractor::ATCCodeStringList).toStringList();
-            QStringList atc2 = secondInteractor->data(DrugInteractor::ATCCodeStringList).toStringList();
+            QStringList atc1 = getAllAtcCodesRelatedToOneDrugInteractor(firstInteractor, interactors);
+            QStringList atc2 = getAllAtcCodesRelatedToOneDrugInteractor(secondInteractor, interactors);
             atc1.removeAll("");
             atc1.removeDuplicates();
             atc2.removeAll("");
@@ -263,6 +270,9 @@ public:
                 atc1 << firstInteractor->data(FREEMEDFORMS_ATC_CODE).toString();
             if (atc2.isEmpty())
                 atc2 << secondInteractor->data(FREEMEDFORMS_ATC_CODE).toString();
+
+            qWarning() << atc1 << atc2;
+
             foreach(const QString &a1, atc1) {
                 foreach(const QString &a2, atc2) {
                     QString atcId1;
@@ -293,13 +303,13 @@ public:
                     }
                     query.finish();
 
-                    //                req = QString("INSERT INTO INTERACTIONS (ATC_ID1, ATC_ID2) VALUES (%1, %2);")
-                    //                        .arg(QString("(SELECT ATC_ID FROM ATC WHERE CODE=\"%1\")").arg(a1))
-                    //                        .arg(QString("(SELECT ATC_ID FROM ATC WHERE CODE=\"%1\")").arg(a2));
                     query.prepare(database->prepareInsertQuery(DrugsDB::Constants::Table_INTERACTIONS));
                     query.bindValue(DrugsDB::Constants::INTERACTIONS_IAID, QVariant());
                     query.bindValue(DrugsDB::Constants::INTERACTIONS_ATC_ID1, atcId1);
                     query.bindValue(DrugsDB::Constants::INTERACTIONS_ATC_ID2, atcId2);
+
+                    qWarning() << atcId1 << atcId2;
+
                     if (!query.exec()) {
                         LOG_QUERY_ERROR_FOR(q, query);
                         LOG_ERROR_FOR(q, QString("*** Interactors not found: \n  %1 - %2 (%3)")
@@ -314,9 +324,6 @@ public:
                     query.finish();
 
                     // mirror DDI
-                    //                req = QString("INSERT INTO INTERACTIONS (ATC_ID2, ATC_ID1) VALUES (%1, %2);")
-                    //                        .arg(QString("(SELECT ATC_ID FROM ATC WHERE CODE=\"%1\")").arg(a1))
-                    //                        .arg(QString("(SELECT ATC_ID FROM ATC WHERE CODE=\"%1\")").arg(a2));
                     query.prepare(database->prepareInsertQuery(DrugsDB::Constants::Table_INTERACTIONS));
                     query.bindValue(DrugsDB::Constants::INTERACTIONS_IAID, QVariant());
                     query.bindValue(DrugsDB::Constants::INTERACTIONS_ATC_ID1, atcId2);
@@ -349,12 +356,6 @@ public:
                 return false;
 
             // Add IAK
-            //        req = QString("INSERT INTO IAKNOWLEDGE (IAKID, TYPE, RISK_MASTER_LID, MAN_MASTER_LID) VALUES "
-            //                      "(NULL, \"%1\", %2, %3)")
-            //                .arg(ddi->data(DrugDrugInteraction::LevelCode).toString())
-            //                .arg(riskMasterLid)
-            //                .arg(manMasterLid);
-
             query.prepare(database->prepareInsertQuery(DrugsDB::Constants::Table_IAKNOWLEDGE));
             query.bindValue(DrugsDB::Constants::IAKNOWLEDGE_IAKID, QVariant());
             query.bindValue(DrugsDB::Constants::IAKNOWLEDGE_TYPE, ddi->data(DrugDrugInteraction::LevelCode).toString());
@@ -376,10 +377,6 @@ public:
 
             // Add to IA_IAK link table
             foreach(const int ia, ia_ids) {
-                //            req = QString("INSERT INTO IA_IAK (IAID, IAKID) VALUES (%1,%2)")
-                //                    .arg(ia)
-                //                    .arg(iak_id)
-                //                    ;
                 query.prepare(database->prepareInsertQuery(DrugsDB::Constants::Table_IA_IAK));
                 query.bindValue(DrugsDB::Constants::IA_IAK_IAID, ia);
                 query.bindValue(DrugsDB::Constants::IA_IAK_IAKID, iak_id);
@@ -409,10 +406,10 @@ public:
             return false;
 
         // Clear database first
-//        QString req = database->prepareDeleteQuery(DrugsDB::Constants::Table_BIB);
-//        DrugsDb::Tools::executeSqlQuery(req, database->connectionName(), __FILE__, __LINE__);
-//        req = database->prepareDeleteQuery(DrugsDB::Constants::Table_BIB_LINK);
-//        DrugsDb::Tools::executeSqlQuery(req, database->connectionName(), __FILE__, __LINE__);
+        QString req = database->prepareDeleteQuery(DrugsDB::Constants::Table_BIB);
+        database->executeSQL(req, db);
+        req = database->prepareDeleteQuery(DrugsDB::Constants::Table_BIB_LINK);
+        database->executeSQL(req, db);
         qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
 
         // Save all pmids
@@ -432,7 +429,8 @@ public:
             query.bindValue(DrugsDB::Constants::BIB_TEXTREF, QVariant());
             query.bindValue(DrugsDB::Constants::BIB_ABSTRACT, QVariant());
             query.bindValue(DrugsDB::Constants::BIB_EXPLAIN, QVariant());
-//            query.bindValue(DrugsDB::Constants::BIB_XML, Biblio::BiblioCore::instance()->xml(pmid).replace("'","''"));
+            query.bindValue(DrugsDB::Constants::BIB_XML, QVariant());
+            // TODO: add bibliographic references of DDI: query.bindValue(DrugsDB::Constants::BIB_XML, Biblio::BiblioCore::instance()->xml(pmid).replace("'","''"));
             if (!query.exec()) {
                 LOG_QUERY_ERROR_FOR(q, query);
                 return false;
@@ -508,9 +506,9 @@ public:
     }
 
     // Read the FreeDDIManager DDIDatabase and return the list of valid DDI
-    QList<DrugDrugInteraction *> getDrugDrugInteractions(DrugsDB::Internal::DrugBaseEssentials *database)
+    QList<DrugDrugInteraction *> getDrugDrugInteractions()
     {
-        QSqlDatabase db = database->database();
+        QSqlDatabase db = ddiCore()->database().database();
         QList<DrugDrugInteraction *> list;
         if (!connectDatabase(db, __FILE__, __LINE__))
             return list;
@@ -573,43 +571,48 @@ public:
     }
 
     // Read the FreeDDIManager DDIDatabase and return the list of valid DrugInteractors
-    QList<DrugInteractor *> getDrugInteractors(DrugsDB::Internal::DrugBaseEssentials *database)
+    QList<DrugInteractor *> getDrugInteractors()
     {
-        QSqlDatabase db = database->database();
+        QSqlDatabase db = ddiCore()->database().database();
         QList<DrugInteractor *> list;
         if (!connectDatabase(db, __FILE__, __LINE__))
             return list;
         db.transaction();
         QSqlQuery query(db);
         QHash<int, QString> where;
-        where.insert(Constants::INTERACTOR_ISVALID, "=1");
-        QString req = ddiCore()->database().select(Constants::Table_INTERACTORS, where);
+        where.insert(DDI::Constants::INTERACTOR_ISVALID, "=1");
+        QString req = ddiCore()->database().select(DDI::Constants::Table_INTERACTORS, where);
         if (query.exec(req)) {
             while (query.next()) {
                 DrugInteractor *di = new DrugInteractor;
-                di->setData(DrugInteractor::Uid, query.value(Constants::INTERACTOR_UID));
-                di->setData(DrugInteractor::EnLabel, query.value(Constants::INTERACTOR_EN));
-                di->setData(DrugInteractor::FrLabel, query.value(Constants::INTERACTOR_FR));
-                di->setData(DrugInteractor::DeLabel, query.value(Constants::INTERACTOR_DE));
-                // di->setData(DrugInteractor::EsLabel, query.value(Constants::INTERACTOR_));
-                di->setData(DrugInteractor::IsValid, query.value(Constants::INTERACTOR_ISVALID));
-                di->setData(DrugInteractor::IsClass, query.value(Constants::INTERACTOR_ISCLASS));
-                di->setData(DrugInteractor::ClassInformationFr, query.value(Constants::INTERACTOR_INFO_FR));
-                di->setData(DrugInteractor::ClassInformationEn, query.value(Constants::INTERACTOR_INFO_EN));
-                di->setData(DrugInteractor::ClassInformationDe, query.value(Constants::INTERACTOR_INFO_DE));
-                di->setData(DrugInteractor::DoNotWarnDuplicated, query.value(Constants::INTERACTOR_WARNDUPLICATES));
-                di->setData(DrugInteractor::Reference, query.value(Constants::INTERACTOR_REF));
-                di->setData(DrugInteractor::PMIDsStringList, query.value(Constants::INTERACTOR_PMIDS));
-                di->setData(DrugInteractor::ATCCodeStringList, query.value(Constants::INTERACTOR_ATC));
-                di->setData(DrugInteractor::Comment, query.value(Constants::INTERACTOR_COMMENT));
-                di->setData(DrugInteractor::IsReviewed, query.value(Constants::INTERACTOR_ISREVIEWED));
-                // TODO : di->setData(DrugInteractor::ReviewersStringList, query.value(Constants::INTERACTOR_));
-                di->setData(DrugInteractor::DateOfReview, query.value(Constants::INTERACTOR_DATEREVIEW));
-                di->setData(DrugInteractor::DateOfCreation, query.value(Constants::INTERACTOR_DATECREATE));
-                di->setData(DrugInteractor::DateLastUpdate, query.value(Constants::INTERACTOR_DATEUPDATE));
-                di->setData(DrugInteractor::IsAutoFound, query.value(Constants::INTERACTOR_ISAUTOFOUND));
-                if (!query.value(Constants::INTERACTOR_CHILDREN).toString().simplified().isEmpty())
-                    di->setChildId(query.value(Constants::INTERACTOR_CHILDREN).toStringList());
+                di->setData(DrugInteractor::Uid, query.value(DDI::Constants::INTERACTOR_UID));
+                di->setData(DrugInteractor::EnLabel, query.value(DDI::Constants::INTERACTOR_EN));
+                di->setData(DrugInteractor::FrLabel, query.value(DDI::Constants::INTERACTOR_FR));
+                di->setData(DrugInteractor::DeLabel, query.value(DDI::Constants::INTERACTOR_DE));
+                // di->setData(DrugInteractor::EsLabel, query.value(DDI::Constants::INTERACTOR_));
+                di->setData(DrugInteractor::IsValid, query.value(DDI::Constants::INTERACTOR_ISVALID));
+                di->setData(DrugInteractor::IsClass, query.value(DDI::Constants::INTERACTOR_ISCLASS));
+                di->setData(DrugInteractor::ClassInformationFr, query.value(DDI::Constants::INTERACTOR_INFO_FR));
+                di->setData(DrugInteractor::ClassInformationEn, query.value(DDI::Constants::INTERACTOR_INFO_EN));
+                di->setData(DrugInteractor::ClassInformationDe, query.value(DDI::Constants::INTERACTOR_INFO_DE));
+                di->setData(DrugInteractor::DoNotWarnDuplicated, query.value(DDI::Constants::INTERACTOR_WARNDUPLICATES));
+                di->setData(DrugInteractor::Reference, query.value(DDI::Constants::INTERACTOR_REF));
+                di->setData(DrugInteractor::PMIDsStringList, query.value(DDI::Constants::INTERACTOR_PMIDS));
+                di->setData(DrugInteractor::Comment, query.value(DDI::Constants::INTERACTOR_COMMENT));
+                di->setData(DrugInteractor::IsReviewed, query.value(DDI::Constants::INTERACTOR_ISREVIEWED));
+                // TODO : di->setData(DrugInteractor::ReviewersStringList, query.value(DDI::Constants::INTERACTOR_));
+                di->setData(DrugInteractor::DateOfReview, query.value(DDI::Constants::INTERACTOR_DATEREVIEW));
+                di->setData(DrugInteractor::DateOfCreation, query.value(DDI::Constants::INTERACTOR_DATECREATE));
+                di->setData(DrugInteractor::DateLastUpdate, query.value(DDI::Constants::INTERACTOR_DATEUPDATE));
+                di->setData(DrugInteractor::IsAutoFound, query.value(DDI::Constants::INTERACTOR_ISAUTOFOUND));
+                di->setData(DrugInteractor::ChildrenInteractorsUidStringList, query.value(DDI::Constants::INTERACTOR_CHILDREN).toStringList());
+                QStringList atcCodes;
+                atcCodes << query.value(DDI::Constants::INTERACTOR_ATC).toStringList();
+                atcCodes.removeAll("");
+                if (atcCodes.isEmpty())
+                    qWarning() << di->data(DDI::DrugInteractor::Uid).toString() << _freeDiamsOnFlyAtcCodeToInteractorUid.key(di->data(DDI::DrugInteractor::Uid).toString());
+                atcCodes << _freeDiamsOnFlyAtcCodeToInteractorUid.key(di->data(DDI::DrugInteractor::Uid).toString());
+                di->setData(DrugInteractor::ATCCodeStringList, atcCodes);
                 list << di;
             }
         } else {
@@ -623,9 +626,39 @@ public:
         return list;
     }
 
+    QStringList getAllAtcCodesRelatedToOneDrugInteractor(DDI::DrugInteractor *di, const QList<DDI::DrugInteractor *> interactors)
+    {
+        QStringList list;
+        // If is a mol -> return the recorded ATC codes
+        if (di->data(DDI::DrugInteractor::ATCCodeStringList).toString().contains("ZXX")) {
+            list << di->data(DDI::DrugInteractor::ATCCodeStringList).toString();
+        } else if (!di->isClass()) {
+            return di->data(DDI::DrugInteractor::ATCCodeStringList).toStringList();
+        }
+
+        // When we have a class we need to include all children ATC codes
+        // Some children are class too so recall this member with each child
+        foreach(const QString &child, di->childrenIds()) {
+            foreach(DDI::DrugInteractor *interactor, interactors) {
+                if (interactor->id() == child) {
+                    list << getAllAtcCodesRelatedToOneDrugInteractor(interactor, interactors);
+                }
+            }
+        }
+        return list;
+    }
+
 public:
     QMultiMap<int, QString> m_iamTreePmids; //K=IAM_ID  ;  V=PMIDs
     QMultiMap<int, QString> m_ddiPmids;     //K=IAK_ID  ;  V=PMIDs
+
+    // FIXME: volatile data (loosing FreeDiams specific codes Uid to ATC Code on DrugInteractor)
+    // In saveAtcClassification, for FreeDiams specific interactors, we create a Z..... ATC code
+    // but this Z-code is created on the fly when we populate drugs database
+    // ATC tables, we keep this information later when we save all the interaction data.
+    // You guess it, you must (re)create the ATC tables to get the corrected link.
+    // We need to add a table in the drugs database to keep this information.
+    QHash<QString, QString> _freeDiamsOnFlyAtcCodeToInteractorUid; // K=ATCcode V=DrugInteractor::Uid
 
 private:
     DrugDatabasePopulator *q;
@@ -662,6 +695,8 @@ bool DrugDatabasePopulator::saveAtcClassification(DrugsDB::Internal::DrugBaseEss
     if (!connectDatabase(db, __FILE__, __LINE__))
         return false;
     LOG("Saving ATC");
+    QTime chrono;
+    chrono.start();
 
     // Clean ATC table from old values
     QString req;
@@ -674,86 +709,82 @@ bool DrugDatabasePopulator::saveAtcClassification(DrugsDB::Internal::DrugBaseEss
     qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
 
     // Import ATC codes to database
-//    QFile file(atcCsvFile());
-//    if (!file.open(QFile::ReadOnly | QIODevice::Text)) {
-//        LOG_ERROR(QString("ERROR : can not open file %1, %2.").arg(file.fileName(), file.errorString()));
-//    } else {
-//        QString content = QString::fromUtf8(file.readAll());
-//        if (content.isEmpty())
-//            return false;
-//        qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
-//        const QStringList &list = content.split("\n", QString::SkipEmptyParts);
-//        qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
-//        foreach(const QString &s, list) {
-//            if (s.startsWith("--")) {
-//                qWarning() << s;
-//                continue;
-//            }
-//            QStringList values = s.split("\";\"");
-//            QMultiHash<QString, QVariant> labels;
-//            QString en = values[1].remove("\"").toUpper();
-//            labels.insert("en", en);
-//            QString fr = values[2].remove("\"").toUpper();
-//            if (fr.isEmpty())
-//                labels.insert("fr", en);
-//            else
-//                labels.insert("fr", fr);
-//            QString de = values[3].remove("\"").toUpper();
-//            if (de.isEmpty())
-//                labels.insert("de", en);
-//            else
-//                labels.insert("de", de);
-//            if (!DrugsDB::Tools::createAtc(database, values[0].remove("\""), labels)) {
-//                return false;
-//            }
-//            qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
-//        }
-//    }
-//    // add FreeDiams ATC specific codes
-//    db.transaction();
-
-//    // 100 000 < ID < 199 999  == Interacting molecules without ATC code
-//    // 200 000 < ID < 299 999  == Interactings classes
-//    int molId = 100000;
-//    int classId = 200000;
-//    foreach(DrugInteractor *di, ddiCore()->getDrugInteractors()) {
-//        if (!di->data(DrugInteractor::ATCCodeStringList).toStringList().count()) {
-//            // Create new ATC code for mols and/or interacting classes
-//            QMultiHash<QString, QVariant> labels;
-//            labels.insert("fr", di->data(DrugInteractor::FrLabel));
-//            if (!di->data(DrugInteractor::EnLabel).isNull())
-//                labels.insert("en", di->data(DrugInteractor::EnLabel));
-//            else
-//                labels.insert("en", di->data(DrugInteractor::FrLabel));
-//            if (!di->data(DrugInteractor::DeLabel).isNull())
-//                labels.insert("de", di->data(DrugInteractor::DeLabel));
-//            else
-//                labels.insert("de", di->data(DrugInteractor::FrLabel));
-
-//            if (di->isClass()) {
-//                ++classId;
-//                QString n = QString::number(classId-200000);
-//                n = n.rightJustified(4, '0');
-//                if (!DrugsDB::Tools::createAtc(database, "ZXX" + n, labels, classId, !di->data(DrugInteractor::DoNotWarnDuplicated).toBool()))
-//                    return false;
-//                di->setData(CLASS_OR_MOL_ID, classId);
-//                di->setData(FREEMEDFORMS_ATC_CODE, QString("ZXX" + n));
-//            } else {
-//                ++molId;
-//                QString n = QString::number(molId-100000);
-//                n = n.rightJustified(2, '0');
-//                if (!DrugsDB::Tools::createAtc(database, "Z01AA" + n, labels, molId, !di->data(DrugInteractor::DoNotWarnDuplicated).toBool()))
-//                    return false;
-//                di->setData(CLASS_OR_MOL_ID, molId);
-//                di->setData(FREEMEDFORMS_ATC_CODE, QString("Z01AA" + n));
-//            }
-//        }
-//        qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
-//    }
-
+    DDI::AtcTableModel *model = ddiCore()->atcTableModel();
+    int n = model->rowCount();
+    for(int i = 0; i < n; ++i) {
+        QModelIndex code = model->index(i, AtcTableModel::Code);
+        QModelIndex fr = model->index(i, AtcTableModel::LabelFr);
+        QModelIndex en = model->index(i, AtcTableModel::LabelEn);
+        QModelIndex de = model->index(i, AtcTableModel::LabelDe);
+        QModelIndex sp = model->index(i, AtcTableModel::LabelSp);
+        QHash<QString, QVariant> labels; // lang, label
+        labels.insert("fr", fr.data());
+        labels.insert("en", en.data());
+        labels.insert("de", de.data());
+        labels.insert("sp", sp.data());
+        if (!DrugsDb::Tools::createAtc(database, code.data().toString(), labels)) {
+            db.rollback();
+            return false;
+        }
+        if (i % 100 == 0) {
+            qWarning() << i << chrono.elapsed() << "ms";
+            qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
+            // TODO: add a Q_EMIT for QProgress...
+        }
+    }
     db.commit();
+    Utils::Log::logTimeElapsed(chrono, "DrugDatabasePopulator", "Saving WHO ATC codes to Drugs database");
+    // 53686ms
 
-    LOG("ATC saved");
+    // add FreeDiams ATC specific codes
+    db.transaction();
+
+    // 100 000 < ID < 199 999  == Interacting molecules without ATC code
+    // 200 000 < ID < 299 999  == Interactings classes
+    int molId = 100000;
+    int classId = 200000;
+    QList<DDI::DrugInteractor *> interactors = d->getDrugInteractors();
+    foreach(DDI::DrugInteractor *di, interactors) {
+        if (!di->hasAtcLink()) {
+            // Create new ATC code for mols and/or interacting classes
+            QMultiHash<QString, QVariant> labels;
+            labels.insert("fr", di->data(DrugInteractor::FrLabel));
+            if (!di->data(DrugInteractor::EnLabel).isNull())
+                labels.insert("en", di->data(DrugInteractor::EnLabel));
+            else
+                labels.insert("en", di->data(DrugInteractor::FrLabel));
+            if (!di->data(DrugInteractor::DeLabel).isNull())
+                labels.insert("de", di->data(DrugInteractor::DeLabel));
+            else
+                labels.insert("de", di->data(DrugInteractor::FrLabel));
+
+            QString onFlyAtcCode;
+            int atcCodeId;
+            if (di->isClass()) {
+                ++classId;
+                QString n = QString::number(classId-200000);
+                n = n.rightJustified(4, '0');
+                onFlyAtcCode = "ZXX" + n;
+                atcCodeId = classId;
+            } else {
+                ++molId;
+                QString n = QString::number(molId-100000);
+                n = n.rightJustified(4, '0');
+                onFlyAtcCode = "Z01" + n;
+                atcCodeId = molId;
+            }
+            if (!DrugsDb::Tools::createAtc(database, onFlyAtcCode, labels, atcCodeId, !di->data(DrugInteractor::DoNotWarnDuplicated).toBool()))
+                    return false;
+            d->_freeDiamsOnFlyAtcCodeToInteractorUid.insert(onFlyAtcCode, di->data(DDI::DrugInteractor::Uid).toString());
+            ++n;
+        }
+        // TODO: add a Q_EMIT for QProgress...
+        qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
+    }
+    db.commit();
+    Utils::Log::logTimeElapsed(chrono, "DrugDatabasePopulator", "Saving FreeMedForms ATC codes to Drugs database");
+
+    LOG(tr("%1 ATC code saved").arg(n));
     return true;
 }
 
@@ -768,14 +799,13 @@ bool DrugDatabasePopulator::saveDrugDrugInteractions(DrugsDB::Internal::DrugBase
     if (!connectDatabase(db, __FILE__, __LINE__))
         return false;
 
+    LOG("Starting DDI saving");
     // Save ATC + FreeMedForms specific codes
     if (!database->isAtcAvailable())
         saveAtcClassification(database);
 
-//    const QList<DrugInteractor *> &interactors = ddiCore()->getDrugInteractors();
-//    const QList<DrugDrugInteraction *> &ddis   = ddiCore()->getDrugDrugInteractions();
-    QList<DDI::DrugInteractor *> interactors = d->getDrugInteractors(database);
-    QList<DDI::DrugDrugInteraction *> ddis = d->getDrugDrugInteractions(database);
+    QList<DDI::DrugInteractor *> interactors = d->getDrugInteractors();
+    QList<DDI::DrugDrugInteraction *> ddis = d->getDrugDrugInteractions();
 
     LOG(tr("Extracted %1 drug interactors from the %2 database")
         .arg(interactors.count())
@@ -787,7 +817,7 @@ bool DrugDatabasePopulator::saveDrugDrugInteractions(DrugsDB::Internal::DrugBase
 
     // Recreate interacting classes tree
     LOG("Saving interactors");
-    QString req = database->prepareDeleteQuery(DrugsDB::Constants::Table_ATC_CLASS_TREE);//"DELETE FROM ATC_CLASS_TREE";
+    QString req = database->prepareDeleteQuery(DrugsDB::Constants::Table_ATC_CLASS_TREE);
     database->executeSQL(req, db);
     db.transaction();
     foreach(DDI::DrugInteractor *interactor, interactors) {

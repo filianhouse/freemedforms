@@ -158,7 +158,7 @@ public:
 
         // add pmids references
         if (id>=0) {
-            foreach(const QString &pmid, parent->childClassificationPMIDs(interactor->data(DrugInteractor::InitialLabel).toString())) {
+            foreach(const QString &pmid, parent->childClassificationPMIDs(interactor->data(DrugInteractor::Uid).toString())) {
                 m_iamTreePmids.insertMulti(id, pmid);
             }
         }
@@ -170,7 +170,7 @@ public:
                 DrugInteractor *child = 0;
                 for(int j=0; j < completeList.count();++j) {
                     DrugInteractor *testMe = completeList.at(j);
-                    if (testMe->data(DrugInteractor::InitialLabel).toString()==childId) {
+                    if (testMe->data(DrugInteractor::Uid).toString()==childId) {
                         child = testMe;
                         break;
                     }
@@ -218,7 +218,7 @@ public:
             DrugInteractor *firstInteractor = 0;
             DrugInteractor *secondInteractor = 0;
             for(int i=0; i < interactors.count();++i) {
-                const QString &id = interactors.at(i)->data(DrugInteractor::InitialLabel).toString();
+                const QString &id = interactors.at(i)->data(DrugInteractor::Uid).toString();
                 if (!firstFound) {
                     if (id==first) {
                         firstFound = true;

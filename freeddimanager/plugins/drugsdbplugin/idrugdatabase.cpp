@@ -80,6 +80,7 @@ IDrugDatabase::IDrugDatabase(QObject *parent) :
 {
     setObjectName("FreeDDIManager::IDrugDatabase");
     _outputFileName = "master.db";
+    _databasePopulator = new DrugDatabasePopulator(this);
     _databasePopulator->initialize();
 }
 

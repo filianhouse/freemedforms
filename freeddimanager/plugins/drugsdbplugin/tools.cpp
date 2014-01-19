@@ -287,7 +287,14 @@ int addLabels(DrugsDB::Internal::DrugBaseEssentials *database, const int masterL
     return mid;
 }
 
-/** Create a specific ATC code */
+/**
+ * Create a specific ATC code using the \e code and the translated labels \e trLabels.
+ * \e trLabels key represent the langage ("fr", "en", "de"...) while the value represent the label itself. \n
+ * You can force the database id for this ATC with \e forceAtcId. \n
+ * If you do not need the drug interaction engine to warn ATC duplication in prescription you can set
+ * \e warnDuplicates to \e false, otherwise set it to \e true. \n
+ * This member creates it own transaction with the DrugsDB::Internal::DrugBaseEssentials.
+ */
 bool createAtc(DrugsDB::Internal::DrugBaseEssentials *database, const QString &code, const QMultiHash<QString, QVariant> &trLabels, const int forceAtcId, const bool warnDuplicates)
 {
     QSqlDatabase db = database->database();
@@ -296,23 +303,15 @@ bool createAtc(DrugsDB::Internal::DrugBaseEssentials *database, const QString &c
     db.transaction();
     QSqlQuery query(db);
     int id = 0;
-    QString req;
     query.prepare(database->prepareInsertQuery(DrugsDB::Constants::Table_ATC));
     query.bindValue(DrugsDB::Constants::ATC_ID, QVariant());
     query.bindValue(DrugsDB::Constants::ATC_CODE, code);
     query.bindValue(DrugsDB::Constants::ATC_WARNDUPLICATES, warnDuplicates);
-
-    if (forceAtcId==-1) {
-//        req = QString("INSERT INTO ATC  (ATC_ID, CODE, WARNDUPLICATES) "
-//                  "VALUES (NULL, '%1', %2) ").arg(code).arg(warnDuplicates);
-    } else {
-//        req = QString("INSERT INTO ATC  (ATC_ID, CODE, WARNDUPLICATES) "
-//                  "VALUES (%1, '%2', %3) ").arg(forceAtcId).arg(code).arg(warnDuplicates);
+    if (forceAtcId != -1)
         query.bindValue(DrugsDB::Constants::ATC_ID, forceAtcId);
-    }
     if (query.exec()) {
         id = query.lastInsertId().toInt();
-        if (forceAtcId!=-1 && forceAtcId!=id) {
+        if (forceAtcId != -1 && forceAtcId != id) {
             LOG_ERROR_FOR("Tools", QString("Wrong ATC_ID Db=%1 / Asked=%2").arg(id).arg(forceAtcId));
             query.finish();
             db.rollback();
@@ -328,12 +327,11 @@ bool createAtc(DrugsDB::Internal::DrugBaseEssentials *database, const QString &c
     if (masterLid == -1) {
         LOG_ERROR_FOR("Tools", "No MasterLid");
         query.finish();
-        db.rollback();
+        //db.rollback();
         return false;
     }
 
     // Create ATC_LABELS link
-//    req = QString("INSERT INTO ATC_LABELS (ATC_ID, MASTER_LID) VALUES (%1, %2) ").arg(id).arg(masterLid);
     query.prepare(database->prepareInsertQuery(DrugsDB::Constants::Table_ATC_LABELS));
     query.bindValue(DrugsDB::Constants::ATC_LABELS_ATCID, id);
     query.bindValue(DrugsDB::Constants::ATC_LABELS_MASTERLID, masterLid);
