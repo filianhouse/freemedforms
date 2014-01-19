@@ -88,6 +88,7 @@ public:
         ReviewersStringList,
         Comment,
         PMIDsStringList,
+        Source,
         InternalUuid
     };
 

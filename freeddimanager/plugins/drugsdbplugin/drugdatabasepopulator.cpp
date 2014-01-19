@@ -113,15 +113,15 @@ public:
         // save using all associated ATC codes
         const QStringList &atcCodes = interactor->data(DrugInteractor::ATCCodeStringList).toStringList();
         if (atcCodes.isEmpty() && !interactor->isClass() && parent && parent->isClass()) {
-            //        QString req = QString("INSERT INTO IAM_TREE (ID_TREE, ID_CLASS, ID_ATC) VALUES "
+            //        QString req = QString("INSERT INTO ATC_CLASS_TREE (ID_TREE, ID_CLASS, ID_ATC) VALUES "
             //                              "(NULL, %1,%2);")
             //                .arg(parent->data(CLASS_OR_MOL_ID).toString())
             //                .arg(interactor->data(CLASS_OR_MOL_ID).toString());
-            query.prepare(database->prepareInsertQuery(DrugsDB::Constants::Table_IAM_TREE));
-            query.bindValue(DrugsDB::Constants::IAM_TREE_ID, QVariant());
-            query.bindValue(DrugsDB::Constants::IAM_TREE_ID_ATC, interactor->data(CLASS_OR_MOL_ID).toString());
-            query.bindValue(DrugsDB::Constants::IAM_TREE_ID_CLASS, parent->data(CLASS_OR_MOL_ID).toString());
-            query.bindValue(DrugsDB::Constants::IAM_TREE_BIBMASTERID, QVariant());
+            query.prepare(database->prepareInsertQuery(DrugsDB::Constants::Table_ATC_CLASS_TREE));
+            query.bindValue(DrugsDB::Constants::ATC_CLASS_TREE_ID, QVariant());
+            query.bindValue(DrugsDB::Constants::ATC_CLASS_TREE_ID_ATC, interactor->data(CLASS_OR_MOL_ID).toString());
+            query.bindValue(DrugsDB::Constants::ATC_CLASS_TREE_ID_CLASS, parent->data(CLASS_OR_MOL_ID).toString());
+            query.bindValue(DrugsDB::Constants::ATC_CLASS_TREE_BIBMASTERID, QVariant());
 
             if (!query.exec()) {
                 LOG_QUERY_ERROR_FOR(q, query);
@@ -131,7 +131,7 @@ public:
             query.finish();
         } else if (!atcCodes.isEmpty() && !interactor->isClass() && parent && parent->isClass()) {
             foreach(const QString &atc, atcCodes) {
-                //            QString req = QString("INSERT INTO IAM_TREE (ID_TREE, ID_CLASS, ID_ATC) VALUES "
+                //            QString req = QString("INSERT INTO ATC_CLASS_TREE (ID_TREE, ID_CLASS, ID_ATC) VALUES "
                 //                                  "(NULL, %1, (SELECT ATC_ID FROM ATC WHERE CODE=\"%2\"));")
                 //                    .arg(parent->data(CLASS_OR_MOL_ID).toString()).arg(atc);
 
@@ -149,11 +149,11 @@ public:
                 }
                 query.finish();
 
-                query.prepare(database->prepareInsertQuery(DrugsDB::Constants::Table_IAM_TREE));
-                query.bindValue(DrugsDB::Constants::IAM_TREE_ID, QVariant());
-                query.bindValue(DrugsDB::Constants::IAM_TREE_ID_ATC, atcId);
-                query.bindValue(DrugsDB::Constants::IAM_TREE_ID_CLASS, parent->data(CLASS_OR_MOL_ID).toString());
-                query.bindValue(DrugsDB::Constants::IAM_TREE_BIBMASTERID, QVariant());
+                query.prepare(database->prepareInsertQuery(DrugsDB::Constants::Table_ATC_CLASS_TREE));
+                query.bindValue(DrugsDB::Constants::ATC_CLASS_TREE_ID, QVariant());
+                query.bindValue(DrugsDB::Constants::ATC_CLASS_TREE_ID_ATC, atcId);
+                query.bindValue(DrugsDB::Constants::ATC_CLASS_TREE_ID_CLASS, parent->data(CLASS_OR_MOL_ID).toString());
+                query.bindValue(DrugsDB::Constants::ATC_CLASS_TREE_BIBMASTERID, QVariant());
 
                 if (!query.exec()) {
                     LOG_QUERY_ERROR_FOR(q, query);
@@ -449,9 +449,9 @@ public:
             const QStringList &pmids = m_iamTreePmids.values(key);
             ++bibMasterId;
             QHash<int, QString> w;
-            w.insert(DrugsDB::Constants::IAM_TREE_ID, QString("='%1'").arg(key));
-            query.prepare(database->prepareUpdateQuery(DrugsDB::Constants::Table_IAM_TREE,
-                                                       DrugsDB::Constants::IAM_TREE_BIBMASTERID,
+            w.insert(DrugsDB::Constants::ATC_CLASS_TREE_ID, QString("='%1'").arg(key));
+            query.prepare(database->prepareUpdateQuery(DrugsDB::Constants::Table_ATC_CLASS_TREE,
+                                                       DrugsDB::Constants::ATC_CLASS_TREE_BIBMASTERID,
                                                        w));
             query.bindValue(0, bibMasterId);
             if (!query.exec()) {
@@ -507,7 +507,7 @@ public:
         return true;
     }
 
-    /** Read the DDI XML file if needed and return the list of created DDI. */
+    // Read the FreeDDIManager DDIDatabase and return the list of valid DDI
     QList<DrugDrugInteraction *> getDrugDrugInteractions(DrugsDB::Internal::DrugBaseEssentials *database)
     {
         QSqlDatabase db = database->database();
@@ -521,33 +521,103 @@ public:
         QString req = ddiCore()->database().select(Constants::Table_DDI, where);
         if (query.exec(req)) {
             while (query.next()) {
-//                DrugDrugInteraction *ddi = new DrugDrugInteraction(ddiNode);
-//                ddi->setData(DrugDrugInteraction::, query.value());
-
-//                FirstInteractorName,
-//                SecondInteractorName,
-//                FirstInteractorRouteOfAdministrationIds,
-//                SecondInteractorRouteOfAdministrationIds,
-//                LevelCode,
-//                LevelName,
-//                DateCreation,
-//                DateLastUpdate,
-//                ListOfUpdates,
-//                IsDuplicated,
-//                IsValid,
-//                IsReviewed,
-//                ReviewersStringList,
-//                Comment,
-//                PMIDsStringList,
-//                InternalUuid
-
-//                list << ddi;
+                DrugDrugInteraction *ddi = new DrugDrugInteraction;
+                ddi->setData(DrugDrugInteraction::FirstInteractorName, query.value(Constants::DDI_FIRSTINTERACTORUID));
+                ddi->setData(DrugDrugInteraction::SecondInteractorName, query.value(Constants::DDI_SECONDINTERACTORUID));
+                ddi->setData(DrugDrugInteraction::FirstInteractorRouteOfAdministrationIds, query.value(Constants::DDI_FIRSTINTERACTORROUTEOFADMINISTRATIONIDS));
+                ddi->setData(DrugDrugInteraction::SecondInteractorRouteOfAdministrationIds, query.value(Constants::DDI_SECONDINTERACTORROUTEOFADMINISTRATIONIDS));
+                ddi->setData(DrugDrugInteraction::LevelCode, query.value(Constants::DDI_LEVELCODE));
+                ddi->setData(DrugDrugInteraction::DateCreation, query.value(Constants::DDI_DATECREATE));
+                ddi->setData(DrugDrugInteraction::DateLastUpdate, query.value(Constants::DDI_DATEUPDATE));
+                // ddi->setData(DrugDrugInteraction::ListOfUpdates, query.value(Constants::DDI_));
+                // ddi->setData(DrugDrugInteraction::IsDuplicated, query.value());
+                ddi->setData(DrugDrugInteraction::IsValid, query.value(Constants::DDI_ISVALID));
+                ddi->setData(DrugDrugInteraction::IsReviewed, query.value(Constants::DDI_ISREVIEWED));
+                ddi->setData(DrugDrugInteraction::ReviewersStringList, query.value(Constants::DDI_REVIEWERSSTRINGLIST));
+                ddi->setData(DrugDrugInteraction::Comment, query.value(Constants::DDI_COMMENT));
+                ddi->setData(DrugDrugInteraction::PMIDsStringList, query.value(Constants::DDI_PMIDSTRINGLIST));
+                ddi->setData(DrugDrugInteraction::InternalUuid, query.value(Constants::DDI_UID));
+                ddi->setData(DrugDrugInteraction::Source, query.value(Constants::DDI_SOURCE));
+                ddi->setRisk(query.value(Constants::DDI_RISKFR).toString(), "fr");
+                ddi->setRisk(query.value(Constants::DDI_RISKEN).toString(), "en");
+                ddi->setManagement(query.value(Constants::DDI_MANAGEMENTFR).toString(), "fr");
+                ddi->setManagement(query.value(Constants::DDI_MANAGEMENTEN).toString(), "en");
+                // TODO: add management of dose
+                // Constants::DDI_FIRSTDOSEUSEFROM,
+                // Constants::DDI_FIRSTDOSEUSESTO,
+                // Constants::DDI_FIRSTDOSEFROMVALUE,
+                // Constants::DDI_FIRSTDOSEFROMUNITS,          // RETURN THE ID IN THE DRUGDRUGINTERACTIONMODEL::UNITS() STRINGLIST
+                // Constants::DDI_FIRSTDOSEFROMREPARTITION,    // RETURN THE ID IN THE DRUGDRUGINTERACTIONMODEL::REPARTITION() STRINGLIST
+                // Constants::DDI_FIRSTDOSETOVALUE,
+                // Constants::DDI_FIRSTDOSETOUNITS,            // RETURN THE ID IN THE DRUGDRUGINTERACTIONMODEL::UNITS() STRINGLIST
+                // Constants::DDI_FIRSTDOSETOREPARTITION,      // RETURN THE ID IN THE DRUGDRUGINTERACTIONMODEL::REPARTITION() STRINGLIST
+                // Constants::DDI_SECONDDOSEUSEFROM,
+                // Constants::DDI_SECONDDOSEUSESTO,
+                // Constants::DDI_SECONDDOSEFROMVALUE,
+                // Constants::DDI_SECONDDOSEFROMUNITS,         // RETURN THE ID IN THE DRUGDRUGINTERACTIONMODEL::UNITS() STRINGLIST
+                // Constants::DDI_SECONDDOSEFROMREPARTITION,   // RETURN THE ID IN THE DRUGDRUGINTERACTIONMODEL::REPARTITION() STRINGLIST
+                // Constants::DDI_SECONDDOSETOVALUE,
+                // Constants::DDI_SECONDDOSETOUNITS,           // RETURN THE ID IN THE DRUGDRUGINTERACTIONMODEL::UNITS() STRINGLIST
+                // Constants::DDI_SECONDDOSETOREPARTITION,     // RETURN THE ID IN THE DRUGDRUGINTERACTIONMODEL::REPARTITION() STRINGLIST
+                list << ddi;
             }
+        } else {
+            LOG_QUERY_ERROR_FOR(q, query);
+            query.finish();
+            db.commit();
+            return list;
         }
+        query.finish();
+        db.commit();
+        return list;
+    }
 
-//        ddi->setData(DrugDrugInteraction::InternalUuid, createInternalUuid());
-//        d->m_ddisToNode.insert(ddi, ddiNode);
-//        LOG(tr("Getting %1 non duplicated drug-drug interactions").arg(d->m_ddisToNode.keys().count()));
+    // Read the FreeDDIManager DDIDatabase and return the list of valid DrugInteractors
+    QList<DrugInteractor *> getDrugInteractors(DrugsDB::Internal::DrugBaseEssentials *database)
+    {
+        QSqlDatabase db = database->database();
+        QList<DrugInteractor *> list;
+        if (!connectDatabase(db, __FILE__, __LINE__))
+            return list;
+        db.transaction();
+        QSqlQuery query(db);
+        QHash<int, QString> where;
+        where.insert(Constants::INTERACTOR_ISVALID, "=1");
+        QString req = ddiCore()->database().select(Constants::Table_INTERACTORS, where);
+        if (query.exec(req)) {
+            while (query.next()) {
+                DrugInteractor *di = new DrugInteractor;
+                di->setData(DrugInteractor::Uid, query.value(Constants::INTERACTOR_UID));
+                di->setData(DrugInteractor::EnLabel, query.value(Constants::INTERACTOR_EN));
+                di->setData(DrugInteractor::FrLabel, query.value(Constants::INTERACTOR_FR));
+                di->setData(DrugInteractor::DeLabel, query.value(Constants::INTERACTOR_DE));
+                // di->setData(DrugInteractor::EsLabel, query.value(Constants::INTERACTOR_));
+                di->setData(DrugInteractor::IsValid, query.value(Constants::INTERACTOR_ISVALID));
+                di->setData(DrugInteractor::IsClass, query.value(Constants::INTERACTOR_ISCLASS));
+                di->setData(DrugInteractor::ClassInformationFr, query.value(Constants::INTERACTOR_INFO_FR));
+                di->setData(DrugInteractor::ClassInformationEn, query.value(Constants::INTERACTOR_INFO_EN));
+                di->setData(DrugInteractor::ClassInformationDe, query.value(Constants::INTERACTOR_INFO_DE));
+                di->setData(DrugInteractor::DoNotWarnDuplicated, query.value(Constants::INTERACTOR_WARNDUPLICATES));
+                di->setData(DrugInteractor::Reference, query.value(Constants::INTERACTOR_REF));
+                di->setData(DrugInteractor::PMIDsStringList, query.value(Constants::INTERACTOR_PMIDS));
+                di->setData(DrugInteractor::ATCCodeStringList, query.value(Constants::INTERACTOR_ATC));
+                di->setData(DrugInteractor::Comment, query.value(Constants::INTERACTOR_COMMENT));
+                di->setData(DrugInteractor::IsReviewed, query.value(Constants::INTERACTOR_ISREVIEWED));
+                // TODO : di->setData(DrugInteractor::ReviewersStringList, query.value(Constants::INTERACTOR_));
+                di->setData(DrugInteractor::DateOfReview, query.value(Constants::INTERACTOR_DATEREVIEW));
+                di->setData(DrugInteractor::DateOfCreation, query.value(Constants::INTERACTOR_DATECREATE));
+                di->setData(DrugInteractor::DateLastUpdate, query.value(Constants::INTERACTOR_DATEUPDATE));
+                di->setData(DrugInteractor::IsAutoFound, query.value(Constants::INTERACTOR_ISAUTOFOUND));
+                if (!query.value(Constants::INTERACTOR_CHILDREN).toString().simplified().isEmpty())
+                    di->setChildId(query.value(Constants::INTERACTOR_CHILDREN).toStringList());
+                list << di;
+            }
+        } else {
+            LOG_QUERY_ERROR_FOR(q, query);
+            query.finish();
+            db.commit();
+            return list;
+        }
         query.finish();
         db.commit();
         return list;
@@ -595,11 +665,13 @@ bool DrugDatabasePopulator::saveAtcClassification(DrugsDB::Internal::DrugBaseEss
 
     // Clean ATC table from old values
     QString req;
-//    req = database->prepareDeleteQuery(DrugsDB::Constants::Table_ATC);
-//    DrugsDB::Tools::executeSqlQuery(req, database->connectionName(), __FILE__, __LINE__);
-//    req = database->prepareDeleteQuery(DrugsDB::Constants::Table_ATC_LABELS);
-//    DrugsDB::Tools::executeSqlQuery(req, database->connectionName(), __FILE__, __LINE__);
-//    qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
+    req = database->prepareDeleteQuery(DrugsDB::Constants::Table_ATC);
+    if (!database->executeSQL(req, db))
+        return false;
+    req = database->prepareDeleteQuery(DrugsDB::Constants::Table_ATC_LABELS);
+    if (!database->executeSQL(req, db))
+        return false;
+    qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
 
     // Import ATC codes to database
 //    QFile file(atcCsvFile());
@@ -702,15 +774,23 @@ bool DrugDatabasePopulator::saveDrugDrugInteractions(DrugsDB::Internal::DrugBase
 
 //    const QList<DrugInteractor *> &interactors = ddiCore()->getDrugInteractors();
 //    const QList<DrugDrugInteraction *> &ddis   = ddiCore()->getDrugDrugInteractions();
-    QList<DrugInteractor *> interactors;
-    QList<DrugDrugInteraction *> ddis;
+    QList<DDI::DrugInteractor *> interactors = d->getDrugInteractors(database);
+    QList<DDI::DrugDrugInteraction *> ddis = d->getDrugDrugInteractions(database);
+
+    LOG(tr("Extracted %1 drug interactors from the %2 database")
+        .arg(interactors.count())
+        .arg(qApp->applicationName()));
+
+    LOG(tr("Extracted %1 drug-drug interactions from the %2 database")
+        .arg(ddis.count())
+        .arg(qApp->applicationName()));
 
     // Recreate interacting classes tree
     LOG("Saving interactors");
-//    QString req = database->prepareDeleteQuery(DrugsDB::Constants::Table_IAM_TREE);//"DELETE FROM IAM_TREE";
-//    DrugsDB::Tools::executeSqlQuery(req, database->connectionName(), __FILE__, __LINE__);
+    QString req = database->prepareDeleteQuery(DrugsDB::Constants::Table_ATC_CLASS_TREE);//"DELETE FROM ATC_CLASS_TREE";
+    database->executeSQL(req, db);
     db.transaction();
-    foreach(DrugInteractor *interactor, interactors) {
+    foreach(DDI::DrugInteractor *interactor, interactors) {
         if (interactor->isClass()) {
             if (!d->saveClassDrugInteractor(interactor, interactors, database, 0)) {
                 db.rollback();

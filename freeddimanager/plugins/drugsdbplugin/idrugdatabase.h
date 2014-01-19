@@ -47,6 +47,7 @@ class DrugBaseEssentials;
 namespace DrugsDb {
 class Drug;
 namespace Internal {
+class DrugDatabasePopulator;
 
 struct SpcContentResources {
     QString type, name, content;
@@ -186,7 +187,7 @@ private:
     QList<QUrl> _spcUrls;
     ProcessTiming _currentTiming;
     SubProcess _currentSubProcess;
-    QVector<DrugsDB::Internal::DrugBaseEssentials*> _drugsDatabases;
+    DrugDatabasePopulator *_databasePopulator;
 };
 
 }  // namespace Internal

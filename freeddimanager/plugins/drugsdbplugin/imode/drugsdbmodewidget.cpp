@@ -169,19 +169,19 @@ void DrugsDbModeWidget::on_startJobs_clicked()
     connect(base, SIGNAL(progress(int)), d->_progress, SLOT(setValue(int)));
     connect(base, SIGNAL(progressLabelChanged(QString)), d->_progress, SLOT(setLabelText(QString)));
 
-    if (d->ui->unzip->isChecked()) {
+    if (d->ui->unzip->isChecked() && !d->ui->unzip->text().contains("CORRECTLY DONE")) {
         if (base->unzipFiles())
             d->ui->unzip->setText(d->ui->unzip->text() + " CORRECTLY DONE");
     }
-    if (d->ui->prepare->isChecked()) {
+    if (d->ui->prepare->isChecked() && !d->ui->prepare->text().contains("CORRECTLY DONE")) {
         if (base->prepareData())
             d->ui->prepare->setText(d->ui->prepare->text() + " CORRECTLY DONE");
     }
-    if (d->ui->createDb->isChecked()) {
+    if (d->ui->createDb->isChecked() && !d->ui->createDb->text().contains("CORRECTLY DONE")) {
         if (base->createDatabase())
             d->ui->createDb->setText(d->ui->createDb->text() + " CORRECTLY DONE");
     }
-    if (d->ui->populate->isChecked()) {
+    if (d->ui->populate->isChecked() && !d->ui->populate->text().contains("CORRECTLY DONE")) {
         if (base->populateDatabase())
             d->ui->populate->setText(d->ui->populate->text() + " CORRECTLY DONE");
     }
@@ -193,27 +193,27 @@ void DrugsDbModeWidget::on_startJobs_clicked()
         d->_progress->setValue(1);
         return;
     }
-    if (d->ui->addAtc->isChecked()) {
+    if (d->ui->addAtc->isChecked() && !d->ui->addAtc->text().contains("CORRECTLY DONE")) {
         if (base->addAtc())
-            d->ui->linkMols->setText(d->ui->linkMols->text() + " CORRECTLY DONE");
+            d->ui->addAtc->setText(d->ui->addAtc->text() + " CORRECTLY DONE");
     }
-    if (d->ui->linkMols->isChecked()) {
+    if (d->ui->linkMols->isChecked() && !d->ui->linkMols->text().contains("CORRECTLY DONE")) {
         if (base->linkMolecules())
             d->ui->linkMols->setText(d->ui->linkMols->text() + " CORRECTLY DONE");
     }
-    if (d->ui->addDDI->isChecked()) {
+    if (d->ui->addDDI->isChecked() && !d->ui->addDDI->text().contains("CORRECTLY DONE")) {
         if (base->addDrugDrugInteractions())
             d->ui->addDDI->setText(d->ui->addDDI->text() + " CORRECTLY DONE");
     }
-    if (d->ui->addPims->isChecked()) {
+    if (d->ui->addPims->isChecked() && !d->ui->addPims->text().contains("CORRECTLY DONE")) {
         if (base->addPims())
             d->ui->addPims->setText(d->ui->addPims->text() + " CORRECTLY DONE");
     }
-    if (d->ui->addPreg->isChecked()) {
+    if (d->ui->addPreg->isChecked() && !d->ui->addPreg->text().contains("CORRECTLY DONE")) {
         if (base->addPregnancyCheckingData())
             d->ui->addPreg->setText(d->ui->addPreg->text() + " CORRECTLY DONE");
     }
-    if (d->ui->spc->isChecked()) {
+    if (d->ui->spc->isChecked() && !d->ui->spc->text().contains("CORRECTLY DONE")) {
         if (base->downloadSpcContents())
             d->ui->spc->setText(d->ui->spc->text() + " CORRECTLY DONE");
     }

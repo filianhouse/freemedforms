@@ -33,9 +33,9 @@
 #include "drugdatabasedescription.h"
 #include "tools.h"
 #include "drug.h"
+#include "drugdatabasepopulator.h"
+
 //#include "routesmodel.h"
-//#include "drugsdbcore.h"
-//#include <drugsdb/ddi/drugdruginteractioncore.h>
 
 #include <drugsbaseplugin/drugbaseessentials.h>
 #include <drugsbaseplugin/constants_databaseschema.h>
@@ -68,10 +68,6 @@ using namespace DrugsDb;
 using namespace DrugsDb::Internal;
 using namespace Trans::ConstantTranslations;
 
-//static inline DrugsDb::DrugsDBCore *dbCore() {return DrugsDb::DrugsDBCore::instance();}
-//static inline DrugsDb::DrugDrugInteractionCore *ddiCore() {return dbCore()->ddiCore();}
-//static inline DataPackPlugin::DataPackCore *dataPackCore() {return DataPackPlugin::DataPackCore::instance();}
-
 /*! Constructor of the DrugsDb::IDrugDatabase class */
 IDrugDatabase::IDrugDatabase(QObject *parent) :
     QObject(parent),
@@ -79,10 +75,12 @@ IDrugDatabase::IDrugDatabase(QObject *parent) :
     _licenseType(Free),
     _serverOwner(Community),
     _spcDefaultEncoding("UTF-8"),
-    _sid(-1)
+    _sid(-1),
+    _databasePopulator(0)
 {
     setObjectName("FreeDDIManager::IDrugDatabase");
     _outputFileName = "master.db";
+    _databasePopulator->initialize();
 }
 
 /*! Destructor of the DrugsDb::IDrugDatabase class */
@@ -172,7 +170,7 @@ void IDrugDatabase::setDatapackDescriptionFile(const QString &absPath)
 /** Return the absolute file path of the output database file */
 QString IDrugDatabase::absoluteFilePath() const
 {
-    return QDir::cleanPath(QString("%1/%2").arg(_outputPath).arg(outputFileName()));
+    return QDir::cleanPath(QString("%1/%2").arg(outputPath()).arg(outputFileName()));
 }
 
 /** Return the Source Id of the drug database source from the drugs database. */
@@ -228,8 +226,10 @@ bool IDrugDatabase::createDatabase()
     Q_EMIT progressLabelChanged(tr("Creating database: adding source description"));
     Q_EMIT progress(1);
     qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
-    if (!saveDrugDatabaseDescription())
+    if (!saveDrugDatabaseDescription()) {
+        Q_EMIT progress(4);
         return false;
+    }
 
     Q_EMIT progressLabelChanged(tr("Creating database: adding routes"));
     Q_EMIT progress(2);
@@ -345,11 +345,15 @@ bool IDrugDatabase::saveDrugDatabaseDescription()
     if (!checkDatabase())
         return false;
     // Some checks
-    if (_descriptionFilePath.isEmpty())
+    if (_descriptionFilePath.isEmpty()) {
+        LOG_ERROR("No description file defined");
         return false;
+    }
     QFile file(_descriptionFilePath);
-    if (!file.exists())
+    if (!file.exists()) {
+        LOG_ERROR("Description file does not exist: " + _descriptionFilePath);
         return false;
+    }
 
     // Read the XML file
     QDomDocument doc;
@@ -357,7 +361,7 @@ bool IDrugDatabase::saveDrugDatabaseDescription()
     int col = 0;
     QString error;
     if (!doc.setContent(Utils::readTextFile(_descriptionFilePath, Utils::DontWarnUser), &error, &line, &col)) {
-        LOG_ERROR_FOR("Tools", tkTr(Trans::Constants::ERROR_1_LINE_2_COLUMN_3).arg(error).arg(line).arg(col));
+        LOG_ERROR(tkTr(Trans::Constants::ERROR_1_LINE_2_COLUMN_3).arg(error).arg(line).arg(col));
         return false;
     }
     DrugDatabaseDescription descr;
@@ -369,6 +373,7 @@ bool IDrugDatabase::saveDrugDatabaseDescription()
     QSqlDatabase db = _database->database();
     if (!db.isOpen()) {
         if (!db.open()) {
+            LOG_ERROR("Unable to open database");
             return false;
         }
     }
@@ -754,10 +759,7 @@ QHash<int, QString> IDrugDatabase::saveMoleculeIds(const QStringList &molnames)
  */
 bool IDrugDatabase::addAtc()
 {
-//    if (licenseType() == IDrugDatabase::Free)
-//        return false;
-//    return ddiCore()->addAtcDataToDatabase(_database);
-    return false;
+    return _databasePopulator->saveAtcClassification(_database);
 }
 
 /**
@@ -766,10 +768,7 @@ bool IDrugDatabase::addAtc()
  */
 bool IDrugDatabase::addDrugDrugInteractions()
 {
-//    if (licenseType() == IDrugDatabase::Free)
-//        return false;
-//    return ddiCore()->addDrugDrugInteractionsToDatabase(_database);
-    return false;
+    return _databasePopulator->saveDrugDrugInteractions(_database);
 }
 
 /**
@@ -778,9 +777,7 @@ bool IDrugDatabase::addDrugDrugInteractions()
  */
 bool IDrugDatabase::addPims()
 {
-//    if (licenseType() == IDrugDatabase::Free)
-//        return false;
-//    return ddiCore()->addPimsToDatabase(_database);
+    // return _databasePopulator->savePIMs(_database);
     return false;
 }
 
@@ -790,9 +787,7 @@ bool IDrugDatabase::addPims()
  */
 bool IDrugDatabase::addPregnancyCheckingData()
 {
-    if (licenseType() == IDrugDatabase::Free)
-        return false;
-//    return ddiCore()->addPregnancyDataToDatabase(_database);
+    // return _databasePopulator->savePregnancyData(_database);
     return true;
 }
 
@@ -1283,31 +1278,20 @@ bool IDrugDatabase::registerDataPack()
 /** Create the drug database using the absolute path \e absPath, and the connectionName \e connection */
 DrugsDB::Internal::DrugBaseEssentials *IDrugDatabase::createDrugDatabase(const QString &absPath, const QString &connection)
 {
-    DrugsDB::Internal::DrugBaseEssentials *base = 0; //drugsBaseFromCache(connection);
-    // Already in cache
-//    if (base)
-//        return 0;
+    // Do not recreate the database
+    if (_database)
+        return _database;
 
     // Create a drugessentialbase
-    base = new DrugsDB::Internal::DrugBaseEssentials;
+    _database = new DrugsDB::Internal::DrugBaseEssentials;
     if (!connection.isEmpty())
-        base->setConnectionName(connection);
-    base->initialize(absPath, true);
-    QSqlDatabase db = base->database();
+        _database->setConnectionName(connection);
+    _database->initialize(absPath, true);
+    QSqlDatabase db = _database->database();
     if (!db.isOpen() && db.isValid()) {
         LOG_ERROR("Unable to connect to drugs database: " + connection);
         return 0;
     }
-    _drugsDatabases << base;
-    LOG("Drug database created");
-    return base;
+    LOG(tr("Drug database created: %1/%2").arg(db.hostName()).arg(db.databaseName()));
+    return _database;
 }
-
-//DrugsDB::Internal::DrugBaseEssentials *IDrugDatabase::drugsBaseFromCache(const QString &connection)
-//{
-//    for(int i=0; i < _drugsDatabases.count(); ++i) {
-//        if (_drugsDatabases.at(i)->connectionName() == connection)
-//            return _drugsDatabases.at(i);
-//    }
-//    return 0;
-//}

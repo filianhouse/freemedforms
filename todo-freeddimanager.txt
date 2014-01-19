@@ -6,6 +6,7 @@ Server
   * Allow data receiving
 
 Drugs database creation
+  * Analysis of component and automatic linking to ATC also check already existing links
   * French
   * FDA
   * CA

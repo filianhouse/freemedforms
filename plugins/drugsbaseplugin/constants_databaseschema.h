@@ -71,7 +71,7 @@ namespace Constants {
         Table_BIB_LINK,
         Table_UNITS,
 
-        Table_ATC, Table_ATC_LABELS, Table_IAM_TREE, Table_LK_MOL_ATC,
+        Table_ATC, Table_ATC_LABELS, Table_ATC_CLASS_TREE, Table_LK_MOL_ATC,
         Table_INTERACTIONS, Table_IAKNOWLEDGE, Table_IA_IAK, Table_PIM_SOURCES,
 
         Table_PIM_TYPES, Table_PIMS, Table_PIMS_RELATED_ATC,
@@ -234,9 +234,9 @@ namespace Constants {
         ATC_LABELS_MaxParam
     };
 
-    enum IAM_TREEFields {
-        IAM_TREE_ID = 0, IAM_TREE_ID_CLASS, IAM_TREE_ID_ATC, IAM_TREE_BIBMASTERID,
-        IAM_TREE_MaxParam
+    enum ATC_CLASS_TREEFields {
+        ATC_CLASS_TREE_ID = 0, ATC_CLASS_TREE_ID_CLASS, ATC_CLASS_TREE_ID_ATC, ATC_CLASS_TREE_BIBMASTERID,
+        ATC_CLASS_TREE_MaxParam
     };
 
     enum PIM_SOURCESFields {

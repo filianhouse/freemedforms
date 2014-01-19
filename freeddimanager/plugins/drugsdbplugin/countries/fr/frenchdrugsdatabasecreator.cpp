@@ -154,7 +154,6 @@ static inline Core::ISettings *settings()  { return Core::ICore::instance()->set
 //    return widget;
 //}
 
-
 FrDrugDatatabase::FrDrugDatatabase(QObject *parent) :
     DrugsDb::Internal::IDrugDatabase(parent),
     m_WithProgress(false)
@@ -163,7 +162,6 @@ FrDrugDatatabase::FrDrugDatatabase(QObject *parent) :
     setTempPath(QString("%1/%2")
                 .arg(settings()->value(Core::Constants::S_TMP_PATH).toString())
                 .arg("/FrenchRawSources/"));
-    setOutputPath(settings()->value(Core::Constants::S_DBOUTPUT_PATH).toString() + "/drugs/");
     setDatabaseDescriptionFile(QString("%1/%2/%3")
                                .arg(settings()->value(Core::Constants::S_GITFILES_PATH).toString())
                                .arg(Core::Constants::PATH_TO_DRUG_DATABASE_DESCRIPTION_FILES)
@@ -198,6 +196,11 @@ void FrDrugDatatabase::setLicenseType(LicenseType type)
                                    .arg(Core::Constants::PATH_TO_DATAPACK_DESCRIPTION_FILES)
                                    .arg("drugs/fr_noddi/packdescription.xml"));
     }
+    setOutputPath(QString("%1/%2/%3")
+                  .arg(settings()->value(Core::Constants::S_DBOUTPUT_PATH).toString())
+                  .arg("/drugs/")
+                  .arg(connectionName())
+                  );
 }
 
 QString FrDrugDatatabase::processMessage() const

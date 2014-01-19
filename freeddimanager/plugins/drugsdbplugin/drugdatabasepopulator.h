@@ -50,7 +50,6 @@ class DrugDatabasePopulator : public QObject
 {
     Q_OBJECT
 
-//protected:
 public:
     explicit DrugDatabasePopulator(QObject *parent = 0);
     bool initialize();
