@@ -118,7 +118,10 @@ bool DrugInteractor::setData(const int reference, const QVariant &value)
         m_AtcLinks.removeAll("");
         return true;
     } else if (reference == ChildrenInteractorsUidStringList) {
-        m_ChildrenId = value.toStringList();
+        if (value.toString().contains(";"))
+            m_ChildrenId = value.toString().split(";");
+        else
+            m_ChildrenId = value.toStringList();
         m_ChildrenId.removeAll("");
         return true;
     }

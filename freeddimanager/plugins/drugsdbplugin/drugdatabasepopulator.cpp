@@ -103,7 +103,7 @@ public:
     {
     }
 
-    /** Save ATC data: class interactors */
+    // Save ATC data: class interactors
     bool saveClassDrugInteractor(DrugInteractor *interactor, const QList<DrugInteractor *> &completeList, DrugsDB::Internal::DrugBaseEssentials *database, DrugInteractor *parent)
     {
         QSqlDatabase db = database->database();
@@ -194,7 +194,7 @@ public:
         return true;
     }
 
-    /** Save the DDI data to the drug database */
+    // Save the DDI data to the drug database
     bool saveDrugDrugInteractions(DrugsDB::Internal::DrugBaseEssentials *database, const QList<DrugInteractor *> &interactors, const QList<DrugDrugInteraction *> &ddis)
     {
         QSqlDatabase db = database->database();
@@ -251,9 +251,6 @@ public:
                 continue;
             }
 
-            qWarning() << "\n\n" << first << second << firstFound << secondFound;
-            qWarning() << firstInteractor << secondInteractor;
-
             QSqlQuery query(db);
             QString req;
             QList<int> ia_ids;
@@ -270,8 +267,6 @@ public:
                 atc1 << firstInteractor->data(FREEMEDFORMS_ATC_CODE).toString();
             if (atc2.isEmpty())
                 atc2 << secondInteractor->data(FREEMEDFORMS_ATC_CODE).toString();
-
-            qWarning() << atc1 << atc2;
 
             foreach(const QString &a1, atc1) {
                 foreach(const QString &a2, atc2) {
@@ -308,7 +303,10 @@ public:
                     query.bindValue(DrugsDB::Constants::INTERACTIONS_ATC_ID1, atcId1);
                     query.bindValue(DrugsDB::Constants::INTERACTIONS_ATC_ID2, atcId2);
 
-                    qWarning() << atcId1 << atcId2;
+                    if (atcId1.isEmpty() || atcId2.isEmpty()) {
+                        LOG_ERROR_FOR(q, QString("No ATC: '%1' - '%2'").arg(atcId1).arg(atcId2));
+                        qWarning() << firstInteractor << secondInteractor;
+                    }
 
                     if (!query.exec()) {
                         LOG_QUERY_ERROR_FOR(q, query);
@@ -396,7 +394,7 @@ public:
         return true;
     }
 
-    /** Save all needed bibliographic references to a drug database */
+    // Save all needed bibliographic references to a drug database
     bool saveBibliographicReferences(DrugsDB::Internal::DrugBaseEssentials *database)
     {
         LOG_FOR(q, "Saving bibliographic references in: " + database->database().databaseName());
@@ -631,9 +629,9 @@ public:
         QStringList list;
         // If is a mol -> return the recorded ATC codes
         if (di->data(DDI::DrugInteractor::ATCCodeStringList).toString().contains("ZXX")) {
-            list << di->data(DDI::DrugInteractor::ATCCodeStringList).toString();
+            list << di->data(DDI::DrugInteractor::ATCCodeStringList).toString().split(";");
         } else if (!di->isClass()) {
-            return di->data(DDI::DrugInteractor::ATCCodeStringList).toStringList();
+            return di->data(DDI::DrugInteractor::ATCCodeStringList).toString().split(";");
         }
 
         // When we have a class we need to include all children ATC codes
