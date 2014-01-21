@@ -30,6 +30,24 @@
  * all other interaction engines data).\n
  * Drugs database are represented by DrugsDB::Internal::DrugBaseEssentials while
  * FreeDDIManager database is represented by DDI::Internal::DDIDatabase.
+ *
+ * ATC codes:
+ * All ATC codes are injected from the WHO ATC data and from the FreeMedForms
+ * specific interactors. Explanation: if an interactor does not exist in the
+ * WHO ATC data, then a fake ATC code is created for this interactor (eg an
+ * interacting class). These fake codes starts with "ZXX" for interacting classes
+ * and "Z00" for molecules (like fluindione).
+ *
+ * Drug-Drug interactions in the final drugs database:
+ * A DDI is defined by an interaction between two interactors (ATC codes). \n
+ * In the final drugs database (DrugsDB::Internal::DrugBaseEssentials) all DDI
+ * are mirrored (A1 interacts with A2, A2 interacts with A1). \n
+ * All classes are expanded (if an interactor is a interacting class, all its
+ * children are used one by one to define all interactions, and if a child is
+ * a class the class is expanded and so one). \n
+ *
+ * PIMs:
+ * \todo
  */
 
 #include "drugdatabasepopulator.h"
