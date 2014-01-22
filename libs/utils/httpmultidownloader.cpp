@@ -355,9 +355,14 @@ bool HttpMultiDownloader::onCurrentDownloadFinished()
     // Emit downloadProgressPermille()
     // All downloads done -> Emit allDownloadFinished()
     if (d->_downloadingIndex == (d->_urls.count()-1)) {
+        saveXmlUrlFileLinks();
         Q_EMIT allDownloadFinished();
         return true;
     }
+
+    // Save XML path content file every 10 downloads
+    if (d->_downloadingIndex % 10 == 0)
+        saveXmlUrlFileLinks();
 
     // Start next url
     ++d->_downloadingIndex;
