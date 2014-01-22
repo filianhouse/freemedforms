@@ -24,59 +24,23 @@
  *       NAME <MAIL@ADDRESS.COM>                                           *
  *       NAME <MAIL@ADDRESS.COM>                                           *
  ***************************************************************************/
-#ifndef FDADRUGSDATABASECREATOR_H
-#define FDADRUGSDATABASECREATOR_H
+#ifndef DDIMANAGER_DRUGSDB_INTERNAL_FDADRUGSDATABASECREATOR_H
+#define DDIMANAGER_DRUGSDB_INTERNAL_FDADRUGSDATABASECREATOR_H
 
-#include <coreplugin/itoolpage.h>
-#include <coreplugin/ftb_constants.h>
-#include <drugsdb/idrugdatabasestep.h>
+#include <drugsdbplugin/idrugdatabase.h>
 
-#include <QWidget>
+/**
+ * \file frenchdrugsdatabasecreator.h
+ * \author Eric Maeker
+ * \version 0.10.0
+ * \date 11 Jan 2014
+*/
 
-namespace DrugsDB {
+namespace DrugsDb {
 namespace Internal {
 class FdaDrugDatatabaseStep;
 
-class FreeFdaDrugsDatabasePage : public Core::IToolPage
-{
-    Q_OBJECT
-public:
-    FreeFdaDrugsDatabasePage(QObject *parent = 0);
-    ~FreeFdaDrugsDatabasePage();
-
-    virtual QString id() const {return "FreeFdaDrugsDatabasePage";}
-    virtual QString name() const;
-    virtual QString category() const;
-    virtual QIcon icon() const {return QIcon();}
-
-    // widget will be deleted after the show
-    virtual QWidget *createPage(QWidget *parent = 0);
-
-private:
-    FdaDrugDatatabaseStep *_step;
-};
-
-class NonFreeFdaDrugsDatabasePage : public Core::IToolPage
-{
-    Q_OBJECT
-public:
-    NonFreeFdaDrugsDatabasePage(QObject *parent = 0);
-    ~NonFreeFdaDrugsDatabasePage();
-
-    virtual QString id() const {return "NonFreeFdaDrugsDatabasePage";}
-    virtual QString name() const;
-    virtual QString category() const;
-    virtual QIcon icon() const {return QIcon();}
-
-    // widget will be deleted after the show
-    virtual QWidget *createPage(QWidget *parent = 0);
-
-private:
-    FdaDrugDatatabaseStep *_step;
-};
-
-
-class FdaDrugDatatabaseStep : public DrugsDB::Internal::IDrugDatabaseStep
+class FdaDrugDatatabaseStep : public DrugsDb::Internal::IDrugDatabase
 {
     Q_OBJECT
 
@@ -102,8 +66,8 @@ private:
     bool m_WithProgress;
 
 };
+
 }  // namespace Internal
-}  // namespace DrugsDB
+}  // namespace DrugsDb
 
-
-#endif // FDADRUGSDATABASECREATOR_H
+#endif // DDIMANAGER_DRUGSDB_INTERNAL_FDADRUGSDATABASECREATOR_H

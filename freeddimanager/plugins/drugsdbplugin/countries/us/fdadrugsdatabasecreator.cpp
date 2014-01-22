@@ -25,19 +25,19 @@
  *       NAME <MAIL@ADDRESS.COM>                                           *
  ***************************************************************************/
 #include "fdadrugsdatabasecreator.h"
-#include "moleculelinkermodel.h"
-#include "drug.h"
-#include "drugsdbcore.h"
-#include "idrugdatabasestepwidget.h"
-#include "moleculelinkdata.h"
+//#include "moleculelinkermodel.h"
+//#include "drug.h"
+//#include "drugsdbcore.h"
+//#include "idrugdatabasestepwidget.h"
+//#include "moleculelinkdata.h"
 
 #include <coreplugin/icore.h>
 #include <coreplugin/imainwindow.h>
-#include <coreplugin/ftb_constants.h>
+#include <coreplugin/fdm_constants.h>
 #include <coreplugin/isettings.h>
 
-#include <drugsdb/drugdatabasedescription.h>
-#include <drugsdb/tools.h>
+#include <drugsdbplugin/drugdatabasedescription.h>
+#include <drugsdbplugin/tools.h>
 
 #include <drugsbaseplugin/drugbaseessentials.h>
 
@@ -71,7 +71,11 @@
 
 #include <QDebug>
 
-using namespace DrugsDB;
+// For your tests, you can limit the number of drugs computed and inserted into the database
+// using this debugging enum. Set to -1 if you want all drugs to be processed
+enum { LimitDrugsTo = -1 };
+
+using namespace DrugsDb;
 using namespace Internal;
 using namespace Trans::ConstantTranslations;
 
@@ -82,81 +86,6 @@ const char* const  FDA_DRUGS_DATABASE_NAME     = "FDA_US";
 static inline Core::ISettings *settings()  { return Core::ICore::instance()->settings(); }
 static inline ExtensionSystem::PluginManager *pluginManager() {return ExtensionSystem::PluginManager::instance();}
 static inline DrugsDB::DrugsDBCore *drugsDbCore() {return DrugsDB::DrugsDBCore::instance();}
-
-/**
- * Option page for the Free FDA drugs database.
- * The ctor also create the DrugsDB::Internal::IDrugDatabaseStep object and
- * register it in the plugin manager object pool.
- */
-FreeFdaDrugsDatabasePage::FreeFdaDrugsDatabasePage(QObject *parent) :
-    IToolPage(parent),
-    _step(0)
-{
-    setObjectName("FreeFdaDrugsDatabasePage");
-    _step = new FdaDrugDatatabaseStep(this);
-    pluginManager()->addObject(_step);
-}
-
-FreeFdaDrugsDatabasePage::~FreeFdaDrugsDatabasePage()
-{
-    pluginManager()->removeObject(_step);
-}
-
-QString FreeFdaDrugsDatabasePage::name() const
-{
-    return tkTr(Trans::Constants::COUNTRY_USA);
-}
-
-QString FreeFdaDrugsDatabasePage::category() const
-{
-    return tkTr(Trans::Constants::DRUGS) + "|" + Core::Constants::CATEGORY_FREEDRUGSDATABASE;
-}
-
-QWidget *FreeFdaDrugsDatabasePage::createPage(QWidget *parent)
-{
-    Q_ASSERT(_step);
-    IDrugDatabaseStepWidget *widget = new IDrugDatabaseStepWidget(parent);
-    widget->initialize(_step);
-    return widget;
-}
-
-/**
- * Option page for the non-free FDA drugs database.
- * The ctor also create the DrugsDB::Internal::IDrugDatabaseStep object and
- * register it in the plugin manager object pool.
- */
-NonFreeFdaDrugsDatabasePage::NonFreeFdaDrugsDatabasePage(QObject *parent) :
-        IToolPage(parent)
-{
-    setObjectName("NonFreeFdaDrugsDatabasePage");
-    _step = new FdaDrugDatatabaseStep(this);
-    _step->setLicenseType(IDrugDatabaseStep::NonFree);
-    pluginManager()->addObject(_step);
-}
-
-NonFreeFdaDrugsDatabasePage::~NonFreeFdaDrugsDatabasePage()
-{
-    pluginManager()->removeObject(_step);
-}
-
-QString NonFreeFdaDrugsDatabasePage::name() const
-{
-    return tkTr(Trans::Constants::COUNTRY_USA);
-}
-
-QString NonFreeFdaDrugsDatabasePage::category() const
-{
-    return tkTr(Trans::Constants::DRUGS) + "|" + Core::Constants::CATEGORY_NONFREEDRUGSDATABASE;
-}
-
-QWidget *NonFreeFdaDrugsDatabasePage::createPage(QWidget *parent)
-{
-    Q_ASSERT(_step);
-    IDrugDatabaseStepWidget *widget = new IDrugDatabaseStepWidget(parent);
-    widget->initialize(_step);
-    return widget;
-}
-
 
 FdaDrugDatatabaseStep::FdaDrugDatatabaseStep(QObject *parent) :
     IDrugDatabaseStep(parent),
@@ -176,7 +105,7 @@ FdaDrugDatatabaseStep::FdaDrugDatatabaseStep(QObject *parent) :
                                .arg(settings()->value(Core::Constants::S_GITFILES_PATH).toString())
                                .arg(Core::Constants::PATH_TO_DATAPACK_DESCRIPTION_FILES)
                                .arg("drugs/fda_noddi/packdescription.xml"));
-    setDownloadUrl("http://www.fda.gov/downloads/Drugs/InformationOnDrugs/ucm054599.zip");
+    setDownloadUrl("http://www.fda.gov/downloads/Drugs/InformationOnDrugs/UCM054599.zip");
     setLicenseType(Free);
     createTemporaryStorage();
 }
@@ -407,7 +336,10 @@ bool FdaDrugDatatabaseStep::populateDatabase()
         drugs << parser.getDrug();
 
         if (drugs.count() % 10 == 0) {
-//            break;
+            if (LimitDrugsTo != -1) {
+                if (drugs.count() == LimitDrugsTo)
+                    break;
+            }
             Q_EMIT progress(pos);
         }
     }
