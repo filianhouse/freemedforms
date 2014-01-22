@@ -1,5 +1,5 @@
-Database
-  * Allow database reloading (hot-changing of db)
+Database & Models
+  * RoutesModel should use data stored in the database and editable (not a txt file)
 
 Server
   * Allow data sending

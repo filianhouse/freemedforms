@@ -35,11 +35,14 @@
 #include "drug.h"
 #include "drugdatabasepopulator.h"
 
-//#include "routesmodel.h"
+#include <ddiplugin/constants.h>
+#include <ddiplugin/routes/routesmodel.h>
 
 #include <drugsbaseplugin/drugbaseessentials.h>
 #include <drugsbaseplugin/constants_databaseschema.h>
 
+#include <coreplugin/icore.h>
+#include <coreplugin/isettings.h>
 #include <coreplugin/constants_tokensandsettings.h>
 
 //#include <datapackplugin/datapackcore.h>
@@ -67,6 +70,15 @@ using namespace DrugsDB;
 using namespace DrugsDb;
 using namespace DrugsDb::Internal;
 using namespace Trans::ConstantTranslations;
+
+static inline Core::ISettings *settings()  { return Core::ICore::instance()->settings(); }
+
+namespace {
+QString routeCsvAbsoluteFile()
+{
+    return QString(settings()->path(Core::ISettings::BundleResourcesPath) + DDI::Constants::ROUTES_CSV_FILENAME);
+}
+} // anonymous namespace
 
 /*! Constructor of the DrugsDb::IDrugDatabase class */
 IDrugDatabase::IDrugDatabase(QObject *parent) :
@@ -273,60 +285,60 @@ bool IDrugDatabase::addRoutes()
         return true;
     }
 
-//    QString content = Utils::readTextFile(RoutesModel::routeCsvAbsoluteFile());
-//    if (content.isEmpty()) {
-//        LOG_ERROR(QString("Routes file does not exist. File: %1").arg(RoutesModel::routeCsvAbsoluteFile()));
-//        return false;
-//    }
-//    LOG("Adding routes to database from " + RoutesModel::routeCsvAbsoluteFile());
-//    QSqlQuery query(_database->database());
+    QString content = Utils::readTextFile(routeCsvAbsoluteFile());
+    if (content.isEmpty()) {
+        LOG_ERROR(QString("Routes file does not exist. File: %1").arg(routeCsvAbsoluteFile()));
+        return false;
+    }
+    LOG("Adding routes to database from " + routeCsvAbsoluteFile());
+    QSqlQuery query(_database->database());
 
-//    // Read file
-//    const QStringList &lines = content.split("\n", QString::SkipEmptyParts);
-//    LOG(QString("Reading %1 lines").arg(lines.count()));
-//    foreach(const QString &line, lines) {
-//        if (line.startsWith("--"))
-//            continue;
-//        int id = 0;
-//        int rid = 0;
-//        QMultiHash<QString, QVariant> trLabels;
-//        QString systemic;
-//        // Parse line
-//        foreach(QString value, line.split(",")) {
-//            value = value.trimmed();
-//            if (id==0) {
-//                // is RID
-//                rid = value.toInt();
-//                ++id;
-//                continue;
-//            }
-//            ++id;
-//            value = value.remove("\"");
-//            int sep = value.indexOf(":");
-//            QString lang = value.left(sep);
-//            if (lang.compare("systemic") == 0) {
-//                systemic = value.mid(sep + 1);
-//            } else {
-//                trLabels.insertMulti(lang, value.mid(sep + 1));
-//            }
-//        }
-//        // Push to database
-//        int masterLid = Tools::addLabels(_database, -1, trLabels);
-//        if (masterLid == -1) {
-//            LOG_ERROR("Route not integrated");
-//            continue;
-//        }
-//        query.prepare(_database->prepareInsertQuery(DrugsDB::Constants::Table_ROUTES));
-//        query.bindValue(DrugsDB::Constants::ROUTES_RID, rid);
-//        query.bindValue(DrugsDB::Constants::ROUTES_MASTERLID, masterLid);
-//        query.bindValue(DrugsDB::Constants::ROUTES_SYSTEMIC, systemic);
-//        if (!query.exec()) {
-//            LOG_QUERY_ERROR(query);
-//            return false;
-//        }
-//        query.finish();
-//    }
-//    LOG("Routes saved");
+    // Read file
+    const QStringList &lines = content.split("\n", QString::SkipEmptyParts);
+    LOG(QString("Reading %1 lines").arg(lines.count()));
+    foreach(const QString &line, lines) {
+        if (line.startsWith("--"))
+            continue;
+        int id = 0;
+        int rid = 0;
+        QMultiHash<QString, QVariant> trLabels;
+        QString systemic;
+        // Parse line
+        foreach(QString value, line.split(",")) {
+            value = value.trimmed();
+            if (id==0) {
+                // is RID
+                rid = value.toInt();
+                ++id;
+                continue;
+            }
+            ++id;
+            value = value.remove("\"");
+            int sep = value.indexOf(":");
+            QString lang = value.left(sep);
+            if (lang.compare("systemic") == 0) {
+                systemic = value.mid(sep + 1);
+            } else {
+                trLabels.insertMulti(lang, value.mid(sep + 1));
+            }
+        }
+        // Push to database
+        int masterLid = Tools::addLabels(_database, -1, trLabels);
+        if (masterLid == -1) {
+            LOG_ERROR("Route not integrated");
+            continue;
+        }
+        query.prepare(_database->prepareInsertQuery(DrugsDB::Constants::Table_ROUTES));
+        query.bindValue(DrugsDB::Constants::ROUTES_RID, rid);
+        query.bindValue(DrugsDB::Constants::ROUTES_MASTERLID, masterLid);
+        query.bindValue(DrugsDB::Constants::ROUTES_SYSTEMIC, systemic);
+        if (!query.exec()) {
+            LOG_QUERY_ERROR(query);
+            return false;
+        }
+        query.finish();
+    }
+    LOG("Routes saved");
     return true;
 }
 
@@ -336,6 +348,7 @@ bool IDrugDatabase::recreateRoutes()
     if (!checkDatabase())
         return false;
     QSqlDatabase db = _database->database();
+    // TODO: to improve: we need to remove labels also
     _database->executeSQL(_database->prepareDeleteQuery(DrugsDB::Constants::Table_ROUTES), db);
     return addRoutes();
 }
@@ -565,10 +578,12 @@ bool IDrugDatabase::saveDrugsIntoDatabase(QVector<Drug *> drugs)
     using namespace DrugsDB::Constants;
     int n = 0;
     Q_EMIT progressRangeChanged(0, drugs.count());
+    DDI::RoutesModel *routesModel = new DDI::RoutesModel(this);
 
     foreach(Drug *drug, drugs) {
         ++n;
         if (n % 10 == 0) {
+            // TODO: manage a "cancelation state"
             Q_EMIT progress(n);
             qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
         }
@@ -648,25 +663,31 @@ bool IDrugDatabase::saveDrugsIntoDatabase(QVector<Drug *> drugs)
 
         // Routes
         const QStringList &routes = drug->data(Drug::Routes).toStringList();
-//        routeId
         if (!routes.isEmpty()) {
             // Create the drugs route links
-//            QList<int> routesId = dbCore()->routesModel()->routeId(routes);
-//            foreach(int rid, routesId) {
-//                query.prepare(_database->prepareInsertQuery(Table_DRUG_ROUTES));
-//                query.bindValue(DRUG_ROUTES_DID, drug->data(Drug::DID).toInt());
-//                query.bindValue(DRUG_ROUTES_RID, rid);
-//                if (!query.exec()) {
-//                    LOG_QUERY_ERROR_FOR("Drugs", query);
-//                    query.finish();
-//                    db.rollback();
-//                    return false;
-//                }
-//                query.finish();
-//            }
+            QList<int> routesId = routesModel->routesId(routes);
+
+            if (routesId.isEmpty()) {
+                LOG_ERROR(QString("Drug routes not found: %1 - %2").arg(drug->data(Drug::Name).toString()).arg(routes.join(";")));
+                continue;
+            }
+
+            foreach(int rid, routesId) {
+                query.prepare(_database->prepareInsertQuery(Table_DRUG_ROUTES));
+                query.bindValue(DRUG_ROUTES_DID, drug->data(Drug::DID).toInt());
+                query.bindValue(DRUG_ROUTES_RID, rid);
+                if (!query.exec()) {
+                    LOG_QUERY_ERROR_FOR("Drugs", query);
+                    query.finish();
+                    db.rollback();
+                    return false;
+                }
+                query.finish();
+            }
         }
 
         // Forms
+        // TODO: improve drugs form management (like routes we need to create a specific model & specific set of data)
         foreach(const QString &lang, drug->availableLanguages()) {
             const QStringList &forms = drug->data(Drug::Forms, lang).toStringList();
             if (!forms.isEmpty()) {
@@ -847,6 +868,8 @@ bool IDrugDatabase::downloadSpcContents()
         if (_multiDownloader->urls().contains(_spcUrls.at(i)))
             _spcUrls.removeAt(i);
     }
+
+    // TODO: emit signals for progressbar
 
     // Start the download
     _multiDownloader->setUrls(_spcUrls);
