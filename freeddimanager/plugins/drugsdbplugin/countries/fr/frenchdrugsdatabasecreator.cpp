@@ -73,7 +73,7 @@ using namespace Trans::ConstantTranslations;
 
 namespace {
 const char* const FR_DRUGS_DATABASE_NAME    = "FR_AFSSAPS";
-const char* const FRENCH_RPC_LINK           = "http://afssaps-prd.afssaps.fr/php/ecodex/rcp/R%1.htm"; // 2+2+3
+const char* const FRENCH_RPC_LINK           = "http://agence-prd.ansm.sante.fr/php/ecodex/rcp/R%1.htm"; // 2+2+3
 }
 
 static inline Core::ISettings *settings()  { return Core::ICore::instance()->settings(); }
