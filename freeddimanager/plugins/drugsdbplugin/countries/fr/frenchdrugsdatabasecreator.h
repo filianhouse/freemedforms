@@ -27,12 +27,7 @@
 #ifndef DDIMANAGER_DRUGSDB_INTERNAL_FRENCHDRUGSDATABASECREATOR_H
 #define DDIMANAGER_DRUGSDB_INTERNAL_FRENCHDRUGSDATABASECREATOR_H
 
-//#include <coreplugin/itoolpage.h>
-//#include <coreplugin/ftb_constants.h>
 #include <drugsdbplugin/idrugdatabase.h>
-
-#include <QWidget>
-#include <QMultiHash>
 
 /**
  * \file frenchdrugsdatabasecreator.h
@@ -43,45 +38,6 @@
 
 namespace DrugsDb {
 namespace Internal {
-//class FrDrugDatatabase;
-
-//class FreeFrenchDrugsDatabasePage : public Core::IToolPage
-//{
-//    Q_OBJECT
-//public:
-//    explicit FreeFrenchDrugsDatabasePage(QObject *parent = 0);
-//    ~FreeFrenchDrugsDatabasePage();
-
-//    virtual QString id() const {return "FreeFrenchDrugsDatabasePage";}
-//    virtual QString name() const;
-//    virtual QString category() const;
-//    virtual QIcon icon() const {return QIcon();}
-
-//    // widget will be deleted after the show
-//    virtual QWidget *createPage(QWidget *parent = 0);
-
-//private:
-//    FrDrugDatatabase *_step;
-//};
-
-//class NonFreeFrenchDrugsDatabasePage : public Core::IToolPage
-//{
-//    Q_OBJECT
-//public:
-//    explicit NonFreeFrenchDrugsDatabasePage(QObject *parent = 0);
-//    ~NonFreeFrenchDrugsDatabasePage();
-
-//    virtual QString id() const {return "NonFreeFrenchDrugsDatabasePage";}
-//    virtual QString name() const;
-//    virtual QString category() const;
-//    virtual QIcon icon() const {return QIcon();}
-
-//    // widget will be deleted after the show
-//    virtual QWidget *createPage(QWidget *parent = 0);
-
-//private:
-//    FrDrugDatatabase *_step;
-//};
 
 class FrDrugDatatabase : public DrugsDb::Internal::IDrugDatabase
 {
