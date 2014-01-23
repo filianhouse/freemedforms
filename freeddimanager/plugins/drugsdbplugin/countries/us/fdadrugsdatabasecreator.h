@@ -28,6 +28,7 @@
 #define DDIMANAGER_DRUGSDB_INTERNAL_FDADRUGSDATABASECREATOR_H
 
 #include <drugsdbplugin/idrugdatabase.h>
+#include <QStringList>
 
 /**
  * \file frenchdrugsdatabasecreator.h
