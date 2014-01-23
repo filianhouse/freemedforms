@@ -866,6 +866,7 @@ bool IDrugDatabase::downloadSpcContents()
     // Remove already downloaded files from the queue
     for(int i = _spcUrls.count() - 1; i >= 0; --i) {
         if (_multiDownloader->urls().contains(_spcUrls.at(i)))
+            // TODO: does the URL needs to be updated ???
             _spcUrls.removeAt(i);
     }
 
@@ -898,6 +899,8 @@ bool IDrugDatabase::onAllSpcDownloadFinished()
         return false;
     }
     disconnect(_multiDownloader, SIGNAL(allDownloadFinished()), this, SLOT(onAllSpcDownloadFinished()));
+
+    // TODO: manage progressbar signals
 
     // Save the HttpMultiDownloader XML cache file (only if there was downloads)
     if (_spcUrls.count() > 0)
