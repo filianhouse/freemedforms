@@ -859,3 +859,49 @@ bool DrugDatabasePopulator::saveDrugDrugInteractions(DrugsDB::Internal::DrugBase
     return true;
 }
 
+bool DrugDatabasePopulator::saveComponentAtcLinks(DrugsDB::Internal::DrugBaseEssentials *database, const QMultiHash<int, int> &componentIdToAtcId, const int sid)
+{
+    QSqlDatabase db = database->database();
+    if (!connectDatabase(db, __FILE__, __LINE__))
+        return false;
+
+    LOG("Start saving component to ATC links");
+    if (!database->isAtcAvailable()) {
+        LOG_ERROR("No ATC data found in the database");
+        return false;
+    }
+
+    const QList<int> &uniqueKeys = componentIdToAtcId.uniqueKeys();
+    LOG(QString("Saving %1 component to ATC links (%2 associations)")
+        .arg(uniqueKeys.count())
+        .arg(componentIdToAtcId.count()));
+    QString req = database->prepareDeleteQuery(DrugsDB::Constants::Table_LK_MOL_ATC);
+    database->executeSQL(req, db);
+    db.transaction();
+    QSqlQuery query(db);
+    for(int i = 0; i < uniqueKeys.count(); ++i) {
+        QList<int> atcCodesSaved;
+        int compo = uniqueKeys.at(i);
+        const QList<int> &values = componentIdToAtcId.values(compo);
+        for(int j = 0; j < values.count(); ++j) {
+            int atc = values.at(j);
+            // avoir duplicate
+            if (atcCodesSaved.contains(atc))
+                continue;
+            atcCodesSaved.append(atc);
+            query.prepare(database->prepareInsertQuery(DrugsDB::Constants::Table_LK_MOL_ATC));
+            query.bindValue(DrugsDB::Constants::LK_MID, compo);
+            query.bindValue(DrugsDB::Constants::LK_ATC_ID, atc);
+            query.bindValue(DrugsDB::Constants::LK_ATC_SID, sid);
+            if (!query.exec()) {
+                LOG_QUERY_ERROR(query);
+                query.finish();
+                db.rollback();
+                return false;
+            }
+            query.finish();
+        }
+    }
+    db.commit();
+    return true;
+}

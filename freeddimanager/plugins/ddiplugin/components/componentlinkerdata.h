@@ -73,7 +73,7 @@ public:
      * components to drug interactors / ATC codes. \n
      * By default, the language is defined to \e french.
     */
-    void setAtcLanguage(const QString &_lang) {lang = lang;}
+    void setAtcLanguage(const QString &_lang) {lang = _lang;}
 
     /**
      * Define some hand made correction for Component using ATC \e label.
@@ -127,26 +127,43 @@ public:
      * This class is a container for the processing results.
      * \sa DDI::ComponentAtcModel::startComponentLinkage()
      */
-    ComponentLinkerResult()
+    ComponentLinkerResult() :
+        _completionPercentage(0.0)
     {}
 
     virtual ~ComponentLinkerResult()
     {}
 
     /** Returns the list of error messages */
-    virtual const QStringList errors() const {return QStringList();}
+    const QStringList errors() const {return _errors;}
 
     /** Returns the list of processing messages */
-    virtual const QStringList messages() const {return QStringList();}
+    const QStringList messages() const {return _msg;}
 
-    /** Returns the component id to ATC id links */
-    virtual const QMultiHash<int, int> componentIdToAtcId() const {return QMultiHash<int, int>();}
+    /**
+     * Returns the component id to ATC id links.
+     * Key represents the \e component \e id, while the value is the \e ATC \e id according
+     * to the DDI::ComponentLinkerData data.
+     * \sa DDI::ComponentLinkerData::setAtcCodeIds(), DDI::ComponentLinkerData::setComponentIds()
+     */
+    const QMultiHash<int, int> componentIdToAtcId() const {return compoIdToAtcId;}
 
     /**
      * Returns true if the result already contains linking data for the specific
      * drug component ID.
      */
-    virtual bool containsComponentId(const int componentId) const {Q_UNUSED(componentId); return false;}
+    bool containsComponentId(const int componentId) const {return compoIdToAtcId.uniqueKeys().contains(componentId);}
+
+    /**
+     * Returns the completion level of the linking processus. Is the percentage of
+     * component linked to a drug interactor / ATC code.
+     */
+    double completionPercentage() const {return _completionPercentage;}
+
+protected:
+    QStringList unfoundComponentsAssociation, _errors, _msg;
+    double _completionPercentage;
+    QMultiHash<int, int> compoIdToAtcId; // Key: moleculeId, Values: AtcIds
 };
 
 } // namespace DDI

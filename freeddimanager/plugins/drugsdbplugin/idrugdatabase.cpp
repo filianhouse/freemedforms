@@ -37,6 +37,8 @@
 
 #include <ddiplugin/constants.h>
 #include <ddiplugin/routes/routesmodel.h>
+#include <ddiplugin/components/componentatcmodel.h>
+#include <ddiplugin/components/componentlinkerdata.h>
 
 #include <drugsbaseplugin/drugbaseessentials.h>
 #include <drugsbaseplugin/constants_databaseschema.h>
@@ -734,9 +736,14 @@ bool IDrugDatabase::saveDrugsIntoDatabase(QVector<Drug *> drugs)
     return true;
 }
 
-/** Save a list of molecules and return a hash containing the MoleculeID as key and the molecule name os value */
+/**
+ * Save a list of molecules and return a hash containing the MoleculeID
+ * as key and the molecule name os value
+ */
 QHash<int, QString> IDrugDatabase::saveMoleculeIds(const QStringList &molnames)
 {
+    // TODO: move this code into DrugsDb::DrugDatabasePopulator
+    // TODO: rename molecule -> component
     QHash<int, QString> mids;
     if (!checkDatabase())
         return mids;
@@ -815,7 +822,7 @@ bool IDrugDatabase::addDrugDrugInteractions()
  */
 bool IDrugDatabase::addPims()
 {
-    // return _databasePopulator->savePIMs(_database);
+    // TODO: return _databasePopulator->savePIMs(_database);
     return false;
 }
 
@@ -825,7 +832,7 @@ bool IDrugDatabase::addPims()
  */
 bool IDrugDatabase::addPregnancyCheckingData()
 {
-    // return _databasePopulator->savePregnancyData(_database);
+    // TODO: return _databasePopulator->savePregnancyData(_database);
     return true;
 }
 
@@ -837,6 +844,8 @@ bool IDrugDatabase::addPregnancyCheckingData()
  */
 bool IDrugDatabase::downloadSpcContents()
 {
+    // TODO: Create specific object and move this code
+
     // The Summary of Product Characteristics can be automatically downloaded and
     // inserted in the drugs database. The following code will:
     // - read all the recorded spc links in the drugs table,
@@ -1199,7 +1208,7 @@ bool IDrugDatabase::startProcessing(ProcessTiming timing, SubProcess subProcess)
         case Process:
             ok = populateDatabase();
             if (ok && licenseType() == NonFree) {
-                ok = linkMolecules()
+                ok = linkDrugsComponentsAndDrugInteractors()
                         && addDrugDrugInteractions()
                         && addPims()
                         && addPregnancyCheckingData();
@@ -1337,4 +1346,104 @@ DrugsDB::Internal::DrugBaseEssentials *IDrugDatabase::createDrugDatabase(const Q
     }
     LOG(tr("Drug database created: %1/%2").arg(db.hostName()).arg(db.databaseName()));
     return _database;
+}
+
+/**
+ * This procedure will
+ * - check the database (exists, rights allowed - only works with NonFree databases)
+ * - request the internal DDI::ComponentAtcModel to
+ *   create the links between drugs components and drugs interactors / ATC codes
+ * - send the resulting links to the drugs database
+ */
+bool IDrugDatabase::linkDrugsComponentsAndDrugInteractors()
+{
+
+//    if (licenseType() == Free)
+//        return true;
+
+    // Connect to databases
+    if (!checkDatabase())
+        return false;
+
+    Q_EMIT progressLabelChanged(tr("Linking drugs components to ATC codes"));
+    Q_EMIT progressRangeChanged(0, 2);
+    Q_EMIT progress(0);
+
+//    // Associate Mol <-> ATC for drugs with one molecule only
+//    NEW
+    DDI::ComponentAtcModel *linkerModel = new DDI::ComponentAtcModel(this);
+    DDI::ComponentLinkerData data;
+    data.setAtcLanguage(_lang);
+
+    // Get all ATC-codes
+    QHash<QString, int> ids;
+    QSqlQuery query(_database->database());
+    QString req = _database->select(Constants::Table_ATC, QList<int>()
+                                    << Constants::ATC_ID
+                                    << Constants::ATC_CODE);
+    if (query.exec(req)) {
+        while (query.next()) {
+            ids.insert(query.value(1).toString(), query.value(0).toInt());
+        }
+    } else {
+        LOG_QUERY_ERROR(query);
+        return false;
+    }
+    data.setAtcCodeIds(ids);
+    query.finish();
+
+    // TODO: data.setComponentCorrectionByAtcCode();
+    // TODO: data.setComponentCorrectionByName();
+
+    // Get all components ids
+    req = _database->select(Constants::Table_MOLS, QList<int>()
+                            << Constants::MOLS_MID
+                            << Constants::MOLS_NAME);
+    ids.clear();
+    if (query.exec(req)) {
+        while (query.next()) {
+            ids.insert(query.value(1).toString(), query.value(0).toInt());
+        }
+    } else {
+        LOG_QUERY_ERROR(query);
+        return false;
+    }
+    data.setComponentIds(ids);
+
+    // Start the linking processus
+    DDI::ComponentLinkerResult result = linkerModel->startComponentLinkage(data);
+
+    // Push data to the drugs database
+    updateDatabaseCompletion(result.completionPercentage());
+    _databasePopulator->saveComponentAtcLinks(_database, result.componentIdToAtcId(), _sid);
+
+    // Push data to the ComponentModel
+    //    // Inform model of founded links
+    //    addAutoFoundMolecules(mol_atc_forModel, true);
+    //    mol_atc_forModel.clear();
+
+//    Old
+//    MoleculeLinkerModel *model = drugsDbCore()->moleculeLinkerModel();
+//    MoleculeLinkData data(drugEssentialDatabase(), sourceId(), ::FR_DRUGS_DATABASE_NAME, "fr");
+//    if (!model->moleculeLinker(&data))
+//        return false;
+
+    Q_EMIT progress(1);
+
+    Q_EMIT progressLabelChanged(tr("Saving components to ATC links to database"));
+    Q_EMIT progressRangeChanged(0, 1);
+    Q_EMIT progress(0);
+
+    // Save to links to drugs database
+//    Tools::addComponentAtcLinks(drugEssentialDatabase(), data.moleculeIdToAtcId, sourceId());
+
+    LOG(QString("Database processed"));
+
+    // add unfound to extralinkermodel
+    Q_EMIT progressLabelChanged(tr("Updating component link XML file"));
+//    model->addUnreviewedMolecules(::FR_DRUGS_DATABASE_NAME, data.unfoundMoleculeAssociations);
+//    model->saveModel();
+    Q_EMIT progress(1);
+
+    return true;
 }

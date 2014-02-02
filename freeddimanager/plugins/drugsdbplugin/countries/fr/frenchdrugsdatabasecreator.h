@@ -56,7 +56,7 @@ public:
 
     bool prepareData();
     bool populateDatabase();
-    bool linkMolecules();
+//    bool linkDrugsComponentsAndDrugInteractors();
 
     QStringList errors() const {return m_Errors;}
 

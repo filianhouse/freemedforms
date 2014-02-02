@@ -140,7 +140,7 @@ bool FrDrugDatatabase::process()
     prepareData();
     createDatabase();
     populateDatabase();
-    linkMolecules();
+    linkDrugsComponentsAndDrugInteractors();
     Q_EMIT processFinished();
     return true;
 }
@@ -293,169 +293,180 @@ bool FrDrugDatatabase::populateDatabase()
     return true;
 }
 
-bool FrDrugDatatabase::linkMolecules()
-{
-    // 21 May 2013
-    //    NUMBER OF MOLECULES 5492
-    //    CORRECTED BY NAME 0
-    //    CORRECTED BY ATC 0
-    //    FOUNDED 2877 "
-    //    LINKERMODEL (WithATC:538;WithoutATC:824) 1362"
+//bool FrDrugDatatabase::linkMolecules()
+//{
+    //    Jan 2014
+    //    Refactoring the code for the FreeDDIManager
+    //    ATC 5665
+    //    NUMBER OF MOLECULES 5618
+    //    HAND MADE ASSOCIATION 0
+    //    FOUNDED 2001 components
+    //    LINKERMODEL (WithATC:538;WithoutATC:824) 1362
     //    LINKERNATURE 0
     //    LEFT 1790
     //    CONFIDENCE INDICE 67.4071
 
-    // 17 Feb 2012
-    //    NUMBER OF MOLECULES 5340
-    //    CORRECTED BY NAME 0
-    //    CORRECTED BY ATC 0
-    //    FOUNDED 3228 "
-    //    LINKERMODEL (WithATC:548;WithoutATC:829) 1377"
-    //    LINKERNATURE 405
-    //    LEFT 1282
-    //    CONFIDENCE INDICE 75
+//    // 21 May 2013
+//    //    NUMBER OF MOLECULES 5492
+//    //    CORRECTED BY NAME 0
+//    //    CORRECTED BY ATC 0
+//    //    FOUNDED 2877 (links not components, 1 component can have N links)
+//    //    LINKERMODEL (WithATC:538;WithoutATC:824) 1362"
+//    //    LINKERNATURE 0
+//    //    LEFT 1790
+//    //    CONFIDENCE INDICE 67.4071
 
-    // 13 Dec 2011: using all length of ATC codes
-    //    NUMBER OF MOLECULES 5230
-    //    CORRECTED BY NAME 0
-    //    CORRECTED BY ATC 0
-    //    FOUNDED 3216 "
-    //    LINKERMODEL (WithATC:550;WithoutATC:829) 1379"
-    //    LINKERNATURE 403
-    //    LEFT 1184
-    //    CONFIDENCE INDICE 77
+//    // 17 Feb 2012
+//    //    NUMBER OF MOLECULES 5340
+//    //    CORRECTED BY NAME 0
+//    //    CORRECTED BY ATC 0
+//    //    FOUNDED 3228 (links not components, 1 component can have N links)
+//    //    LINKERMODEL (WithATC:548;WithoutATC:829) 1377"
+//    //    LINKERNATURE 405
+//    //    LEFT 1282
+//    //    CONFIDENCE INDICE 75
 
-    // 18 Oct 2011
-    //    NUMBER OF MOLECULES 5211
-    //    CORRECTED BY NAME 0
-    //    CORRECTED BY ATC 0
-    //    FOUNDED 3114 "
-    //    LINKERMODEL (WithATC:617;WithoutATC:833) 1450"
-    //    LINKERNATURE 470
-    //    LEFT 1263
-    //    CONFIDENCE INDICE 75
+//    // 13 Dec 2011: using all length of ATC codes
+//    //    NUMBER OF MOLECULES 5230
+//    //    CORRECTED BY NAME 0
+//    //    CORRECTED BY ATC 0
+//    //    FOUNDED 3216 "
+//    //    LINKERMODEL (WithATC:550;WithoutATC:829) 1379"
+//    //    LINKERNATURE 403
+//    //    LEFT 1184
+//    //    CONFIDENCE INDICE 77
 
-    // 29 Sept 2011 (ATC 2011 && ATC 2012)
-    //    NUMBER OF MOLECULES 5194
-    //    CORRECTED BY NAME 0
-    //    CORRECTED BY ATC 0
-    //    FOUNDED 3036 "
-    //    LINKERMODEL (WithATC:682;WithoutATC:829) 1511"
-    //    LINKERNATURE 558
-    //    LEFT 1328
-    //    CONFIDENCE INDICE 74
+//    // 18 Oct 2011
+//    //    NUMBER OF MOLECULES 5211
+//    //    CORRECTED BY NAME 0
+//    //    CORRECTED BY ATC 0
+//    //    FOUNDED 3114 "
+//    //    LINKERMODEL (WithATC:617;WithoutATC:833) 1450"
+//    //    LINKERNATURE 470
+//    //    LEFT 1263
+//    //    CONFIDENCE INDICE 75
 
-    // 29 Apr 2011
-    //    NUMBER OF MOLECULES 5154
-    //    CORRECTED BY NAME 0
-    //    CORRECTED BY ATC 0
-    //    FOUNDED 2856 "
-    //    LINKERMODEL (WithATC:568;WithoutATC:790) 1358"
-    //    LINKERNATURE 528
-    //    LEFT 1507
-    //    CONFIDENCE INDICE 70
+//    // 29 Sept 2011 (ATC 2011 && ATC 2012)
+//    //    NUMBER OF MOLECULES 5194
+//    //    CORRECTED BY NAME 0
+//    //    CORRECTED BY ATC 0
+//    //    FOUNDED 3036 "
+//    //    LINKERMODEL (WithATC:682;WithoutATC:829) 1511"
+//    //    LINKERNATURE 558
+//    //    LEFT 1328
+//    //    CONFIDENCE INDICE 74
 
-    // 10 Dec 2010
-    //    NUMBER OF MOLECULES 5112
-    //    CORRECTED BY NAME 0
-    //    CORRECTED BY ATC 0
-    //    FOUNDED 2375 "
-    //    LINKERMODEL (WithATC:366;WithoutATC:790) 1156"
-    //    LINKERNATURE 301
-    //    LEFT 1648
-    //    CONFIDENCE INDICE 61
+//    // 29 Apr 2011
+//    //    NUMBER OF MOLECULES 5154
+//    //    CORRECTED BY NAME 0
+//    //    CORRECTED BY ATC 0
+//    //    FOUNDED 2856 "
+//    //    LINKERMODEL (WithATC:568;WithoutATC:790) 1358"
+//    //    LINKERNATURE 528
+//    //    LEFT 1507
+//    //    CONFIDENCE INDICE 70
 
-    // 13 Nov 2010
-    //    NUMBER OF MOLECULES 5113
-    //    CORRECTED BY NAME 0
-    //    CORRECTED BY ATC 0
-    //    FOUNDED 2304
-    //    LINKERMODEL 283
-    //    LINKERNATURE 302
-    //    LEFT 2511
+//    // 10 Dec 2010
+//    //    NUMBER OF MOLECULES 5112
+//    //    CORRECTED BY NAME 0
+//    //    CORRECTED BY ATC 0
+//    //    FOUNDED 2375 "
+//    //    LINKERMODEL (WithATC:366;WithoutATC:790) 1156"
+//    //    LINKERNATURE 301
+//    //    LEFT 1648
+//    //    CONFIDENCE INDICE 61
 
-    // 20 Sept 2010
-    //    FOUNDED 1825
-    //    LINKERMODEL 279
-    //    LINKERNATURE 412
-    //    LEFT 1203
+//    // 13 Nov 2010
+//    //    NUMBER OF MOLECULES 5113
+//    //    CORRECTED BY NAME 0
+//    //    CORRECTED BY ATC 0
+//    //    FOUNDED 2304
+//    //    LINKERMODEL 283
+//    //    LINKERNATURE 302
+//    //    LEFT 2511
 
-    // 08 Sept 2010
-    // Removing french prefix
-    //    Number of marketed drugs 10096
-    //    Number of distinct molecules 2928
-    //    FOUNDED 1764
-    //    LINKERMODEL 199
-    //    LINKERNATURE 392
-    //    LEFT 1262
+//    // 20 Sept 2010
+//    //    FOUNDED 1825
+//    //    LINKERMODEL 279
+//    //    LINKERNATURE 412
+//    //    LEFT 1203
 
-    // 05 Sept 2010
-    // Removing non marketed drugs
-    //    Number of marketed drugs 10096
-    //    Number of distinct molecules 2928
-    //    FOUNDED 1702
-    //    LINKERMODEL 128
-    //    LINKERNATURE 387
-    //    LEFT 1321
+//    // 08 Sept 2010
+//    // Removing french prefix
+//    //    Number of marketed drugs 10096
+//    //    Number of distinct molecules 2928
+//    //    FOUNDED 1764
+//    //    LINKERMODEL 199
+//    //    LINKERNATURE 392
+//    //    LEFT 1262
 
-    // 28 August 2010
-    // 5472 ATCs
-    // Number of distinct molecules
-    //    Hand 0
-    //    FOUNDED 2176
-    //    LINKERMODEL 97
-    //    LINKERNATURE 299
-    //    LEFT 2613
+//    // 05 Sept 2010
+//    // Removing non marketed drugs
+//    //    Number of marketed drugs 10096
+//    //    Number of distinct molecules 2928
+//    //    FOUNDED 1702
+//    //    LINKERMODEL 128
+//    //    LINKERNATURE 387
+//    //    LEFT 1321
 
-    // 27 August 2010
-    // 5472 ATCs
-    // Number of distinct molecules 5069
-    //    Hand 0
-    //    FOUNDED 2128
-    //    LINKERMODEL 34
-    //    LINKERNATURE 304
-    //    LEFT 2647
+//    // 28 August 2010
+//    // 5472 ATCs
+//    // Number of distinct molecules
+//    //    Hand 0
+//    //    FOUNDED 2176
+//    //    LINKERMODEL 97
+//    //    LINKERNATURE 299
+//    //    LEFT 2613
 
-    // Old code
-    //   5074 Molecules
-    //   1502 Same name MOL <-> ATC asso
-    //   239 Partial name MOL <-> ATC asso
-    //   2 from LK_NATURE
-    //   Total = 2253 associations
+//    // 27 August 2010
+//    // 5472 ATCs
+//    // Number of distinct molecules 5069
+//    //    Hand 0
+//    //    FOUNDED 2128
+//    //    LINKERMODEL 34
+//    //    LINKERNATURE 304
+//    //    LEFT 2647
 
-    if (licenseType() == Free)
-        return true;
+//    // Old code
+//    //   5074 Molecules
+//    //   1502 Same name MOL <-> ATC asso
+//    //   239 Partial name MOL <-> ATC asso
+//    //   2 from LK_NATURE
+//    //   Total = 2253 associations
 
-    // Connect to databases
-    if (!checkDatabase())
-        return false;
+//    if (licenseType() == Free)
+//        return true;
 
-    Q_EMIT progressLabelChanged(tr("Linking drugs components to ATC codes"));
-    Q_EMIT progressRangeChanged(0, 2);
-    Q_EMIT progress(0);
-
-//    // Associate Mol <-> ATC for drugs with one molecule only
-//    MoleculeLinkerModel *model = drugsDbCore()->moleculeLinkerModel();
-//    MoleculeLinkData data(drugEssentialDatabase(), sourceId(), ::FR_DRUGS_DATABASE_NAME, "fr");
-//    if (!model->moleculeLinker(&data))
+//    // Connect to databases
+//    if (!checkDatabase())
 //        return false;
 
-    Q_EMIT progress(1);
+//    Q_EMIT progressLabelChanged(tr("Linking drugs components to ATC codes"));
+//    Q_EMIT progressRangeChanged(0, 2);
+//    Q_EMIT progress(0);
 
-    Q_EMIT progressLabelChanged(tr("Saving components to ATC links to database"));
-    Q_EMIT progressRangeChanged(0, 1);
-    Q_EMIT progress(0);
+////    // Associate Mol <-> ATC for drugs with one molecule only
+////    MoleculeLinkerModel *model = drugsDbCore()->moleculeLinkerModel();
+////    MoleculeLinkData data(drugEssentialDatabase(), sourceId(), ::FR_DRUGS_DATABASE_NAME, "fr");
+////    if (!model->moleculeLinker(&data))
+////        return false;
 
-    // Save to links to drugs database
-//    Tools::addComponentAtcLinks(drugEssentialDatabase(), data.moleculeIdToAtcId, sourceId());
+//    Q_EMIT progress(1);
 
-    LOG(QString("Database processed"));
+//    Q_EMIT progressLabelChanged(tr("Saving components to ATC links to database"));
+//    Q_EMIT progressRangeChanged(0, 1);
+//    Q_EMIT progress(0);
 
-    // add unfound to extralinkermodel
-    Q_EMIT progressLabelChanged(tr("Updating component link XML file"));
-//    model->addUnreviewedMolecules(::FR_DRUGS_DATABASE_NAME, data.unfoundMoleculeAssociations);
-//    model->saveModel();
-    Q_EMIT progress(1);
+//    // Save to links to drugs database
+////    Tools::addComponentAtcLinks(drugEssentialDatabase(), data.moleculeIdToAtcId, sourceId());
 
-    return true;
-}
+//    LOG(QString("Database processed"));
+
+//    // add unfound to extralinkermodel
+//    Q_EMIT progressLabelChanged(tr("Updating component link XML file"));
+////    model->addUnreviewedMolecules(::FR_DRUGS_DATABASE_NAME, data.unfoundMoleculeAssociations);
+////    model->saveModel();
+//    Q_EMIT progress(1);
+
+//    return true;
+//}

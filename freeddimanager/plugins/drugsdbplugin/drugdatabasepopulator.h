@@ -59,6 +59,7 @@ public:
 
     bool saveAtcClassification(DrugsDB::Internal::DrugBaseEssentials *database);
     bool saveDrugDrugInteractions(DrugsDB::Internal::DrugBaseEssentials *database);
+    bool saveComponentAtcLinks(DrugsDB::Internal::DrugBaseEssentials *database, const QMultiHash<int, int> &componentIdToAtcId, const int sid);
 
 private:
     Internal::DrugDatabasePopulatorPrivate *d;

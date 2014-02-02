@@ -151,7 +151,7 @@ public:
     virtual bool registerDataPack();
     virtual bool prepareData() = 0;
     virtual bool populateDatabase() = 0; // Cannot be asynchronous
-    virtual bool linkMolecules() = 0;  // Cannot be asynchronous
+    virtual bool linkDrugsComponentsAndDrugInteractors();  // Cannot be asynchronous
 
     bool saveDrugSpc(const SpcContent &content);
 

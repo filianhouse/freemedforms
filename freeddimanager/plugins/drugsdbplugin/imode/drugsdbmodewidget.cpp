@@ -198,7 +198,7 @@ void DrugsDbModeWidget::on_startJobs_clicked()
             d->ui->addAtc->setText(d->ui->addAtc->text() + " CORRECTLY DONE");
     }
     if (d->ui->linkMols->isChecked() && !d->ui->linkMols->text().contains("CORRECTLY DONE")) {
-        if (base->linkMolecules())
+        if (base->linkDrugsComponentsAndDrugInteractors())
             d->ui->linkMols->setText(d->ui->linkMols->text() + " CORRECTLY DONE");
     }
     if (d->ui->addDDI->isChecked() && !d->ui->addDDI->text().contains("CORRECTLY DONE")) {
