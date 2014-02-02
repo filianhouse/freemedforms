@@ -148,7 +148,8 @@ void IDrugDatabase::setDownloadUrl(const QString &url)
 /** Define the absolute path to the finalization SQL script to execute. This is obsolete. */
 void IDrugDatabase::setFinalizationScript(const QString &absPath)
 {
-    // TODO: add some checks
+    if (!QFileInfo(absPath).exists())
+        LOG_ERROR(tr("Finalization script file does not exist: %1").arg(absPath));
     _finalizationScriptPath = QDir::cleanPath(absPath);
 }
 
@@ -159,7 +160,8 @@ void IDrugDatabase::setFinalizationScript(const QString &absPath)
 */
 void IDrugDatabase::setDatabaseDescriptionFile(const QString &absPath)
 {
-    // TODO: add some checks
+    if (!QFileInfo(absPath).exists())
+        LOG_ERROR(tr("Description file does not exist: %1").arg(absPath));
     _descriptionFilePath = QDir::cleanPath(absPath);
 }
 
@@ -170,7 +172,8 @@ void IDrugDatabase::setDatabaseDescriptionFile(const QString &absPath)
 */
 void IDrugDatabase::setDatapackDescriptionFile(const QString &absPath)
 {
-    // TODO: add some checks
+    if (!QFileInfo(absPath).exists())
+        LOG_ERROR(tr("Datapack description file does not exist: %1").arg(absPath));
     _datapackDescriptionFilePath = QDir::cleanPath(absPath);
 }
 
@@ -186,6 +189,7 @@ void IDrugDatabase::setDatapackDescriptionFile(const QString &absPath)
  * DDI data, and to link drugs components to Drug interactors/ATC codes. \n
  * Default is "en".
  */
+// TODO: drug database language is already defined in the database description, should we use the description?
 
 /** Return the absolute file path of the output database file */
 QString IDrugDatabase::absoluteFilePath() const
@@ -283,6 +287,7 @@ bool IDrugDatabase::createDatabase()
 /** Add drug routes to the database. This function uses the default routes text file. */
 bool IDrugDatabase::addRoutes()
 {
+    // TODO: move this code into DrugsDb::DrugDatabasePopulator
     if (!checkDatabase())
         return false;
 
@@ -352,6 +357,7 @@ bool IDrugDatabase::addRoutes()
 /** Recreate drug routes in the database. This function uses the default routes text file. */
 bool IDrugDatabase::recreateRoutes()
 {
+    // TODO: move this code into DrugsDb::DrugDatabasePopulator
     if (!checkDatabase())
         return false;
     QSqlDatabase db = _database->database();
@@ -363,6 +369,7 @@ bool IDrugDatabase::recreateRoutes()
 /** Save the database description and create a drug base source ID */
 bool IDrugDatabase::saveDrugDatabaseDescription()
 {
+    // TODO: move this code into DrugsDb::DrugDatabasePopulator
     if (!checkDatabase())
         return false;
     // Some checks
@@ -521,6 +528,7 @@ bool IDrugDatabase::saveDrugDatabaseDescription()
 /** Update the INN <-> molecules linking completion percentage */
 bool IDrugDatabase::updateDatabaseCompletion(int completion)
 {
+    // TODO: move this code into DrugsDb::DrugDatabasePopulator
     if (!checkDatabase())
         return false;
     QHash<int, QString> where;
@@ -540,6 +548,7 @@ bool IDrugDatabase::updateDatabaseCompletion(int completion)
 /** Save a list of drugs in the database. The drugs vector will be sorted. */
 bool IDrugDatabase::saveDrugsIntoDatabase(QVector<Drug *> drugs)
 {
+    // TODO: move this code into DrugsDb::DrugDatabasePopulator
     if (!checkDatabase())
         return false;
     if (_sid==-1) {
