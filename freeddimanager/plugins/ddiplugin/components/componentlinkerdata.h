@@ -121,73 +121,32 @@ protected:
 
 class DDI_EXPORT ComponentLinkerResult
 {
-    friend class DDI::ComponentAtcModel;
-
 public:
     /**
      * DDI::ComponentAtcModel manages components with interactors linking.
      * This class is a container for the processing results.
      * \sa DDI::ComponentAtcModel::startComponentLinkage()
      */
-    ComponentLinkerResult() :
-        completionPercentage(0.0)
+    ComponentLinkerResult()
     {}
 
-    ~ComponentLinkerResult()
+    virtual ~ComponentLinkerResult()
     {}
 
     /** Returns the list of error messages */
-    const QStringList &errors() const {return _errors;}
+    virtual const QStringList errors() const {return QStringList();}
 
     /** Returns the list of processing messages */
-    const QStringList &messages() const {return _msg;}
+    virtual const QStringList messages() const {return QStringList();}
 
     /** Returns the component id to ATC id links */
-    const QMultiHash<int, int> &componentIdToAtcId() const {return compoIdToAtcId;}
+    virtual const QMultiHash<int, int> componentIdToAtcId() const {return QMultiHash<int, int>();}
 
     /**
      * Returns true if the result already contains linking data for the specific
      * drug component ID.
      */
-    bool containsComponentId(const int componentId) const {return compoIdToAtcId.uniqueKeys().contains(componentId);}
-
-protected:
-    // Out setData
-    /**
-     * Define the component name list that can not be linked to any drug interactor / ATC code. \n
-     * This data is defined by the DDI::ComponentModel::componentLinker() procedure.
-     */
-    void setUnfoundComponents(const QStringList &unfound) {unfoundComponentsAssociation = unfound;}
-
-    /**
-     * Define the component name list that can not be linked to any drug interactor / ATC code. \n
-     * This data is defined by the DDI::ComponentModel::componentLinker() procedure.
-     */
-    void addUnfoundComponent(const QString &unfound)
-    {
-        if (!unfoundComponentsAssociation.contains(unfound))
-            unfoundComponentsAssociation << unfound;
-    }
-
-    /**
-     * Define the link between the component database Id and the ATC database Id.
-     * This data is defined by the DDI::ComponentModel::componentLinker() procedure.
-     */
-    void setComponentsIdToAtcId(const QMultiHash<int, int> &links) {compoIdToAtcId = links;}
-
-    /** Add an error message */
-    void addErrorMessage(const QString &s) {_errors << s;}
-
-    /** Add a message */
-    void addMessage(const QString &s) {_msg << s;}
-
-    /** Add a link between component and interactor */
-    void addComponentToAtcLink(int componentId, int atcId) {compoIdToAtcId.insertMulti(componentId, atcId);}
-
-protected:
-    QStringList unfoundComponentsAssociation, _errors, _msg;
-    double completionPercentage;
-    QMultiHash<int, int> compoIdToAtcId; // Key: moleculeId, Values: AtcIds
+    virtual bool containsComponentId(const int componentId) const {Q_UNUSED(componentId); return false;}
 };
 
 } // namespace DDI

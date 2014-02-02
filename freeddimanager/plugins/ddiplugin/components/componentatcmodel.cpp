@@ -63,6 +63,62 @@ static inline DDI::Internal::DDIDatabase &ddiBase()  { return DDI::DDICore::inst
 
 namespace DDI {
 namespace Internal {
+
+class PrivateResult : public ComponentLinkerResult
+{
+public:
+    PrivateResult() :
+        completionPercentage(0.0)
+    {}
+
+    ~PrivateResult()
+    {}
+
+    // Public interface
+    const QStringList errors() const {return _errors;}
+    const QStringList messages() const {return _msg;}
+    const QMultiHash<int, int> componentIdToAtcId() const {return compoIdToAtcId;}
+    bool containsComponentId(const int componentId) const {return compoIdToAtcId.uniqueKeys().contains(componentId);}
+
+    // Private interface
+    /**
+     * Define the component name list that can not be linked to any drug interactor / ATC code. \n
+     * This data is defined by the DDI::ComponentModel::componentLinker() procedure.
+     */
+    void setUnfoundComponents(const QStringList &unfound) {unfoundComponentsAssociation = unfound;}
+
+    /**
+     * Define the component name list that can not be linked to any drug interactor / ATC code. \n
+     * This data is defined by the DDI::ComponentModel::componentLinker() procedure.
+     */
+    void addUnfoundComponent(const QString &unfound)
+    {
+        if (!unfoundComponentsAssociation.contains(unfound))
+            unfoundComponentsAssociation << unfound;
+    }
+
+    /**
+     * Define the link between the component database Id and the ATC database Id.
+     * This data is defined by the DDI::ComponentModel::componentLinker() procedure.
+     */
+    void setComponentsIdToAtcId(const QMultiHash<int, int> &links) {compoIdToAtcId = links;}
+
+    /** Add an error message */
+    void addErrorMessage(const QString &s) {_errors << s;}
+
+    /** Add a message */
+    void addMessage(const QString &s) {_msg << s;}
+
+    /** Add a link between component and interactor */
+    void addComponentToAtcLink(int componentId, int atcId) {compoIdToAtcId.insertMulti(componentId, atcId);}
+
+protected:
+    QStringList unfoundComponentsAssociation, _errors, _msg;
+    double completionPercentage;
+    QMultiHash<int, int> compoIdToAtcId; // Key: moleculeId, Values: AtcIds
+};
+
+
 class ComponentAtcModelPrivate
 {
 public:
@@ -431,7 +487,7 @@ struct MolLink {
  */
 ComponentLinkerResult &ComponentAtcModel::startComponentLinkage(const ComponentLinkerData &data)
 {
-    ComponentLinkerResult *result = new ComponentLinkerResult;
+    PrivateResult *result = new PrivateResult;
     if (!ddiBase().database().isOpen()) {
         result->addErrorMessage("Can not connect to DDI::DDIDatabase");
         LOG_ERROR("Can not connect to DDI::DDIDatabase");
@@ -466,8 +522,8 @@ ComponentLinkerResult &ComponentAtcModel::startComponentLinkage(const ComponentL
     query.finish();
     qWarning() << "ATC" << atcCodeToName.count();
 
-    qWarning() << "Number of distinct molecules" << data.compoIds.uniqueKeys().count();
     const QStringList &knownComponentNames = data.compoIds.uniqueKeys();
+    LOG(QString("Number of distinct molecules: %1").arg(knownComponentNames.count()));
 
     // Manage corrected components link by ATC label
     int corrected = 0;
@@ -521,8 +577,8 @@ ComponentLinkerResult &ComponentAtcModel::startComponentLinkage(const ComponentL
                 transformedLbl = Utils::removeAccents(transformedLbl);
                 atcCodes = atcCodeToName.keys(transformedLbl);
                 if (atcCodes.count() > 0) {
-                    result->addMessage(QString("Found component link after label transformation: %1 - %2").arg("remove accents").arg(componentLbl));
-                    LOG(QString("Found component link after label transformation: %1 - %2").arg("remove accents").arg(componentLbl));
+                    result->addMessage(QString("Non exact-match: %1 - %2").arg("remove accents").arg(componentLbl));
+                    LOG(QString("Non exact-match: %1 - %2").arg("remove accents").arg(componentLbl));
                 }
 
                 // Not found try some transformations
@@ -531,15 +587,15 @@ ComponentLinkerResult &ComponentAtcModel::startComponentLinkage(const ComponentL
                     transformedLbl = componentLbl.left(componentLbl.indexOf("(")).simplified();
                     atcCodes = atcCodeToName.keys(transformedLbl);
                     if (atcCodes.count() > 0) {
-                        result->addMessage(QString("Found component link after label transformation: %1 - %2").arg("remove (*)").arg(componentLbl));
-                        LOG(QString("Found component link after label transformation: %1 - %2").arg("remove (*)").arg(componentLbl));
+                        result->addMessage(QString("Non exact-match: %1 - %2").arg("remove (*)").arg(componentLbl));
+                        LOG(QString("Non exact-match: %1 - %2").arg("remove (*)").arg(componentLbl));
                     } else {
                         // Try without accents
                         transformedLbl = Utils::removeAccents(transformedLbl);
                         atcCodes = atcCodeToName.keys(transformedLbl);
                         if (atcCodes.count() > 0) {
-                            result->addMessage(QString("Found component link after label transformation: %1 - %2").arg("remove (*) & accents").arg(componentLbl));
-                            LOG(QString("Found component link after label transformation: %1 - %2").arg("remove (*) & accents").arg(componentLbl));
+                            result->addMessage(QString("Non exact-match: %1 - %2").arg("remove (*) & accents").arg(componentLbl));
+                            LOG(QString("Non exact-match: %1 - %2").arg("remove (*) & accents").arg(componentLbl));
                         }
                     }
                 }
@@ -553,15 +609,15 @@ ComponentLinkerResult &ComponentAtcModel::startComponentLinkage(const ComponentL
                     transformedLbl = componentLbl.left(componentLbl.lastIndexOf(" ")).simplified();
                     atcCodes = atcCodeToName.keys(transformedLbl);
                     if (atcCodes.count() > 0) {
-                        result->addMessage(QString("Found component link after label transformation: %1 - %2").arg("remove last word").arg(componentLbl));
-                        LOG(QString("Found component link after label transformation: %1 - %2").arg("remove last word").arg(componentLbl));
+                        result->addMessage(QString("Non exact-match: %1 - %2").arg("remove last word").arg(componentLbl));
+                        LOG(QString("Non exact-match: %1 - %2").arg("remove last word").arg(componentLbl));
                     } else {
                         // Try without accents
                         transformedLbl = Utils::removeAccents(transformedLbl);
                         atcCodes = atcCodeToName.keys(transformedLbl);
                         if (atcCodes.count() > 0) {
-                            result->addMessage(QString("Found component link after label transformation: %1 - %2").arg("remove last word & accents").arg(componentLbl));
-                            LOG(QString("Found component link after label transformation: %1 - %2").arg("remove last word & accents").arg(componentLbl));
+                            result->addMessage(QString("Non exact-match: %1 - %2").arg("remove last word & accents").arg(componentLbl));
+                            LOG(QString("Non exact-match: %1 - %2").arg("remove last word & accents").arg(componentLbl));
                         }
                     }
                 }
@@ -579,8 +635,8 @@ ComponentLinkerResult &ComponentAtcModel::startComponentLinkage(const ComponentL
                             tmp = tmp.simplified();
                             atcCodes = atcCodeToName.keys(tmp);
                             if (atcCodes.count() > 0) {
-                                result->addMessage(QString("Found component link after label transformation: %1 - %2").arg(QString("removed %1").arg(prefix)).arg(componentLbl));
-                                LOG(QString("Found component link after label transformation: %1 - %2").arg(QString("removed %1").arg(prefix)).arg(componentLbl));
+                                result->addMessage(QString("Non exact-match: %1 - %2").arg(QString("removed %1").arg(prefix)).arg(componentLbl));
+                                LOG(QString("Non exact-match: %1 - %2").arg(QString("removed %1").arg(prefix)).arg(componentLbl));
                                 break;
                             }
                         }
@@ -600,8 +656,8 @@ ComponentLinkerResult &ComponentAtcModel::startComponentLinkage(const ComponentL
                             tmp += prefix;
                             atcCodes = atcCodeToName.keys(tmp);
                             if (atcCodes.count() > 0) {
-                                result->addMessage(QString("Found component link after label transformation: %1 - %2").arg(QString("moved %1").arg(prefix)).arg(componentLbl));
-                                LOG(QString("Found component link after label transformation: %1 - %2").arg(QString("moved %1").arg(prefix)).arg(componentLbl));
+                                result->addMessage(QString("Non exact-match: %1 - %2").arg(QString("moved %1").arg(prefix)).arg(componentLbl));
+                                LOG(QString("Non exact-match: %1 - %2").arg(QString("moved %1").arg(prefix)).arg(componentLbl));
                                 break;
                             }
                         }
