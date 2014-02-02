@@ -27,6 +27,8 @@
 #ifndef DDIMANAGER_DDIPLUGIN_INTERNAL_COMPONENT_TO_ATC_MODEL_H
 #define DDIMANAGER_DDIPLUGIN_INTERNAL_COMPONENT_TO_ATC_MODEL_H
 
+#include <ddiplugin/ddi_exporter.h>
+
 #include <QAbstractTableModel>
 #include <QMultiHash>
 #include <QHash>
@@ -48,12 +50,13 @@ namespace Internal {
 class ComponentAtcModelPrivate;
 }  // namespace Internal
 
-class ComponentAtcModel : public QAbstractTableModel
+class DDI_EXPORT ComponentAtcModel : public QAbstractTableModel
 {
     Q_OBJECT
     friend class DDI::DDICore;
 
-protected:
+//protected:
+public:
     explicit ComponentAtcModel(QObject *parent = 0);
     bool initialize();
     bool onDdiDatabaseChanged();
