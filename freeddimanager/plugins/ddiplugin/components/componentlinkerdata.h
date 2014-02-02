@@ -54,6 +54,11 @@ class DDI_EXPORT ComponentLinkerData
     friend class DDI::ComponentAtcModel;
 
 public:
+    /**
+     * DDI::ComponentAtcModel needs data to link components with interactors.
+     * This class is a container for these data.
+     * \sa DDI::ComponentAtcModel::startComponentLinkage()
+     */
     ComponentLinkerData() :
         lang("fr")
     {}
@@ -119,6 +124,11 @@ class DDI_EXPORT ComponentLinkerResult
     friend class DDI::ComponentAtcModel;
 
 public:
+    /**
+     * DDI::ComponentAtcModel manages components with interactors linking.
+     * This class is a container for the processing results.
+     * \sa DDI::ComponentAtcModel::startComponentLinkage()
+     */
     ComponentLinkerResult() :
         completionPercentage(0.0)
     {}
@@ -126,9 +136,19 @@ public:
     ~ComponentLinkerResult()
     {}
 
+    /** Returns the list of error messages */
     const QStringList &errors() const {return _errors;}
+
+    /** Returns the list of processing messages */
     const QStringList &messages() const {return _msg;}
+
+    /** Returns the component id to ATC id links */
     const QMultiHash<int, int> &componentIdToAtcId() const {return compoIdToAtcId;}
+
+    /**
+     * Returns true if the result already contains linking data for the specific
+     * drug component ID.
+     */
     bool containsComponentId(const int componentId) const {return compoIdToAtcId.uniqueKeys().contains(componentId);}
 
 protected:
