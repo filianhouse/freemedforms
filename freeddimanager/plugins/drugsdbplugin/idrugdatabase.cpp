@@ -87,6 +87,7 @@ IDrugDatabase::IDrugDatabase(QObject *parent) :
     _licenseType(Free),
     _serverOwner(Community),
     _spcDefaultEncoding("UTF-8"),
+    _lang("en"),
     _sid(-1),
     _databasePopulator(0)
 {
@@ -179,6 +180,12 @@ void IDrugDatabase::setDatapackDescriptionFile(const QString &absPath)
  * all files are read with the UTF-8 encoding.
  */
 
+/**
+ * \fn void IDrugDatabase::setDatabaseLanguage(const QString &lang)
+ * Define the language of the database. This language will be used to import ATC data,
+ * DDI data, and to link drugs components to Drug interactors/ATC codes. \n
+ * Default is "en".
+ */
 
 /** Return the absolute file path of the output database file */
 QString IDrugDatabase::absoluteFilePath() const
