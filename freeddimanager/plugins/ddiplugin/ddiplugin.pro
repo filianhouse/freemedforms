@@ -42,7 +42,8 @@ HEADERS += \
     server/servermanagerwidget.h \
     components/componentatcmode.h \
     components/componentatcmodel.h \
-    components/componentatceditorwidget.h
+    components/componentatceditorwidget.h \
+    components/componentlinkerdata.h
 
 
 SOURCES += \

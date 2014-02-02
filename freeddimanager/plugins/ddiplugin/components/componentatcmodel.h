@@ -41,6 +41,9 @@
 
 namespace DDI {
 class DDICore;
+class ComponentLinkerResult;
+class ComponentLinkerData;
+
 namespace Internal {
 class ComponentAtcModelPrivate;
 }  // namespace Internal
@@ -90,7 +93,7 @@ public:
     bool addUnreviewedMolecules(const QString &dbUid, const QStringList &molecules);
     bool addAutoFoundMolecules(const QMultiHash<QString, QString> &mol_atc, bool removeFromModel = false);
 
-    // bool moleculeLinker(Internal::MoleculeLinkData *data);
+    ComponentLinkerResult &startComponentLinkage(const ComponentLinkerData &data);
 
 public Q_SLOTS:
     void setActualReviewer(const QString &name);
