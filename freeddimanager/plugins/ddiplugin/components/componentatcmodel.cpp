@@ -578,14 +578,14 @@ ComponentLinkerResult &ComponentAtcModel::startComponentLinkage(const ComponentL
     result->addMessage(QString("Hand made association: %1").arg(corrected));
 
     // Find component / ATC links
+
+    // First pass: find exact match component label <-> atc label
     foreach(QString componentLbl, knownComponentNames) {
         if (componentLbl.isEmpty())
             continue;
         QList<int> compoIds = data.compoIds.values(componentLbl);
-
         // Always remove accents for ATC autochecking (ATC labels are retrieved without accents)
         componentLbl = Utils::removeAccents(componentLbl);
-
         foreach(const int componentId, compoIds) {
             // Already processed?
             if (result->containsComponentId(componentId)) {
@@ -596,69 +596,67 @@ ComponentLinkerResult &ComponentAtcModel::startComponentLinkage(const ComponentL
             // Does component name exact-matches an ATC label
             QString transformedLbl = componentLbl;
             QStringList atcCodes = atcCodeToName.keys(transformedLbl);
-            if (atcCodes.isEmpty()) {
-                // Try to find the ATC label using component name transformation
-                // Not found try some transformations
-                // remove '(*)'
-                if (componentLbl.contains("(")) {
-                    transformedLbl = componentLbl.left(componentLbl.indexOf("(")).simplified();
-                    atcCodes = atcCodeToName.keys(transformedLbl);
-                    if (atcCodes.count() > 0) {
-                        result->addMessage(QString("Non exact-match: %1 - %2").arg("()").arg(componentLbl));
-                        LOG(QString("Non exact-match: %1 - %2").arg("()").arg(componentLbl));
-                    }
-                }
 
-                // still not found
-                if (atcCodes.isEmpty()) {
-                    // remove last word :
-                    // CITRATE, DIHYDRATE, SODIUM, HYDROCHLORIDE,
-                    // POLISTIREX, BROMIDE, MONOHYDRATE, CHLORIDE, CARBAMATE
-                    // INDANYL SODIUM, ULTRAMICROCRYSTALLINE, TROMETHAMINE
-                    transformedLbl = componentLbl.left(componentLbl.lastIndexOf(" ")).simplified();
-                    atcCodes = atcCodeToName.keys(transformedLbl);
-                    if (atcCodes.count() > 0) {
-                        result->addMessage(QString("Non exact-match: %1 - %2").arg("last word").arg(componentLbl));
-                        LOG(QString("Non exact-match: %1 - %2").arg("remove last word").arg(componentLbl));
-                    }
+            // Now check if we find something
+            if (!atcCodes.isEmpty()) {
+                // Matches -> add id links
+                foreach(const QString &atcCode, atcCodes) {
+                    int atcId = data.atcCodeIds.value(atcCode);
+                    result->addComponentToAtcLink(componentId, atcId, data);
                 }
+            }
 
-                // Still not found
-                if (atcCodes.isEmpty()) {
-                    // remove first words : CHLORHYDRATE DE, ACETATE DE
-                    QStringList toRemove;
-                    toRemove << "CHLORHYDRATE DE" << "CHLORHYDRATE D'"
-                             << "ACETATE DE" << "ACETATE D'"
-                             << "MONOHYDRATE DE" << "MONOHYDRATE D'"
-                             << "SULFATE DE" << "SULFATE D'"
-                             << "BISULFATE DE" << "BISULFATE D'"
-                             << "TRINITRATE D'" << "TRINITRATE DE"
-                             << "DINITRATE D'" << "DINITRATE DE"
-                             << "NITRATE D'" << "NITRATE DE";
-                    transformedLbl = componentLbl;
-                    foreach(const QString &prefix, toRemove) {
-                        if (transformedLbl.startsWith(prefix)) {
-                            QString tmp = transformedLbl;
-                            tmp.remove(prefix);
-                            tmp = tmp.simplified();
-                            atcCodes = atcCodeToName.keys(tmp);
-                            if (atcCodes.count() > 0) {
-                                result->addMessage(QString("Non exact-match: %1 - %2").arg(QString("removed %1").arg(prefix)).arg(componentLbl));
-                                LOG(QString("Non exact-match: %1 - %2").arg(QString("removed %1").arg(prefix)).arg(componentLbl));
-                                break;
-                            }
-                        }
+        }
+    }
+
+    // Second pass: find non-exact match component label (without prefix) <-> atc label
+    foreach(QString componentLbl, knownComponentNames) {
+        if (componentLbl.isEmpty())
+            continue;
+        QList<int> compoIds = data.compoIds.values(componentLbl);
+        // Always remove accents for ATC autochecking (ATC labels are retrieved without accents)
+        componentLbl = Utils::removeAccents(componentLbl);
+
+        foreach(const int componentId, compoIds) {
+            // Already processed?
+            if (result->containsComponentId(componentId)) {
+                LOG(QString("Already processed: %1").arg(componentLbl));
+                continue;
+            }
+
+            // Component name does not exact-matches an ATC label (already tested)
+            // And the component is not already found using component linking
+            QString transformedLbl = componentLbl;
+            QStringList atcCodes;
+
+            // Try to find the ATC label using component name transformation
+            // -> Remove prefix: CHLORHYDRATE DE, ACETATE DE
+            QStringList toRemove;
+            toRemove << "CHLORHYDRATE DE" << "CHLORHYDRATE D'"
+                     << "ACETATE DE" << "ACETATE D'"
+                     << "MONOHYDRATE DE" << "MONOHYDRATE D'"
+                     << "SULFATE DE" << "SULFATE D'"
+                     << "BISULFATE DE" << "BISULFATE D'"
+                     << "TRINITRATE D'" << "TRINITRATE DE"
+                     << "DINITRATE D'" << "DINITRATE DE"
+                     << "NITRATE D'" << "NITRATE DE";
+            transformedLbl = componentLbl;
+            foreach(const QString &prefix, toRemove) {
+                if (transformedLbl.startsWith(prefix)) {
+                    QString tmp = transformedLbl;
+                    tmp.remove(prefix);
+                    tmp = tmp.simplified();
+                    atcCodes = atcCodeToName.keys(tmp);
+                    if (atcCodes.count() > 0) {
+                        result->addMessage(QString("Non exact-match: %1 - %2").arg(QString("removed %1").arg(prefix)).arg(componentLbl));
+                        LOG(QString("Non exact-match: %1 - %2").arg(QString("removed %1").arg(prefix)).arg(componentLbl));
+                        break;
                     }
                 }
-            } else {
-                LOG(QString("Exact-match: %1").arg(componentLbl));
             }
 
             // Now we checked all possibilities, check if we found something
-            if (atcCodes.isEmpty()) {
-                // Nothing -> add the component id to the unmatched list
-                result->addUnfoundComponent(componentLbl);
-            } else {
+            if (!atcCodes.isEmpty()) {
                 // Matches -> add id links
                 foreach(const QString &atcCode, atcCodes) {
                     int atcId = data.atcCodeIds.value(atcCode);
@@ -667,6 +665,49 @@ ComponentLinkerResult &ComponentAtcModel::startComponentLinkage(const ComponentL
             }
         }
     }
+
+    // Third pass: find non-exact match component label (remove (*)) <-> atc label
+    foreach(QString componentLbl, knownComponentNames) {
+        if (componentLbl.isEmpty())
+            continue;
+        QList<int> compoIds = data.compoIds.values(componentLbl);
+        // Always remove accents for ATC autochecking (ATC labels are retrieved without accents)
+        componentLbl = Utils::removeAccents(componentLbl);
+        foreach(const int componentId, compoIds) {
+            // Already processed?
+            if (result->containsComponentId(componentId)) {
+                LOG(QString("Already processed: %1").arg(componentLbl));
+                continue;
+            }
+
+            // Component name does not exact-matches an ATC label (already tested)
+            // And the component is not already found using component linking
+            QString transformedLbl = componentLbl;
+            QStringList atcCodes;
+
+            // Try to find the ATC label using component name transformation
+            // Not found try some transformations
+            // remove '(*)'
+            if (componentLbl.contains("(")) {
+                transformedLbl = componentLbl.left(componentLbl.indexOf("(")).simplified();
+                atcCodes = atcCodeToName.keys(transformedLbl);
+                if (atcCodes.count() > 0) {
+                    result->addMessage(QString("Non exact-match: %1 - %2").arg("()").arg(componentLbl));
+                    LOG(QString("Non exact-match: %1 - %2").arg("()").arg(componentLbl));
+                }
+            }
+
+            // Now we checked all possibilities, check if we found something
+            if (!atcCodes.isEmpty()) {
+                // Matches -> add id links
+                foreach(const QString &atcCode, atcCodes) {
+                    int atcId = data.atcCodeIds.value(atcCode);
+                    result->addComponentToAtcLink(componentId, atcId, data);
+                }
+            }
+        }
+    }
+
     LOG(QString("Automatic association (number of components): %1").arg(result->componentIdToAtcId().uniqueKeys().count()));
     result->addMessage(QString("Automatic association (number of components): %1").arg(result->componentIdToAtcId().uniqueKeys().count()));
 
