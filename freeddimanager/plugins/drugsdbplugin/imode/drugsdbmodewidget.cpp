@@ -128,6 +128,9 @@ DrugsDbModeWidget::DrugsDbModeWidget(QWidget *parent) :
     d->ui->setupUi(this);
     d->ui->progressBar->hide();
 
+    d->ui->downloadSPC->hide();
+    // TODO: connect(d->ui->downloadSPC, SIGNAL(clicked()), this, SLOT(downloadFinished()));
+
     onCurrentDrugsDatabaseChanged(QItemSelection(), QItemSelection());
 }
 
