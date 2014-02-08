@@ -1317,6 +1317,9 @@ QList<int> DrugsBase::interactingClassContent(int classId)
  */
 int DrugsBase::interactingClassSingleAtcCount(int classId)
 {
+//    QHash<int, QString> where;
+//    where.insert(Constants::ATC_CODE, QString("LIKE '%1%'").arg(getAtcCode(classId)));
+//    return this->count(Constants::Table_ATC, Constants::ATC_ID, getWhereClause(Constants::Table_ATC, where));
     int n = 0;
     const QList<int> &content = d->m_ClassToAtcs.values(classId);
     for(int i=0; i < content.count(); ++i) {
