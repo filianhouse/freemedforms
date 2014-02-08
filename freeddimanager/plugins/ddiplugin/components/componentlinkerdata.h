@@ -32,12 +32,13 @@
 #include <QStringList>
 #include <QHash>
 #include <QMultiHash>
+#include <QDebug>
 
 /**
  * \file componentlinkerdata.h
  * \author Eric Maeker
  * \version 0.10.0
- * \date 28 Jan 2014
+ * \date 08 Feb 2014
 */
 
 namespace DrugsDB {
@@ -109,6 +110,43 @@ public:
      */
     void setAtcCodeIds(const QHash<QString, int> &_atcCodeIds) {atcCodeIds = _atcCodeIds;}
 
+    /**
+     * If some components are equivalent (same molecule with a different name), you
+     * can add the equivalence. It will be automatically managed.
+     */
+    void addComponentEquivalence(int id1, int id2)
+    {
+        // Internally all equivalences are stored non-mirrored
+        if (_equivalences.values(id1).contains(id2))
+            return;
+        if (_equivalences.values(id2).contains(id1))
+            return;
+        _equivalences.insertMulti(id1, id2);
+    }
+
+    QList<int> equivalences(const int compoId) const
+    {
+        QList<int> eq = _equivalences.values(compoId);
+        eq << _equivalences.keys(compoId);
+        return eq;
+    }
+
+    QString debugEquivalences() const
+    {
+        QString r;
+        const QList<int> &ids = _equivalences.uniqueKeys();
+        for(int i = 0; i < ids.count(); ++i) {
+            int id = ids.at(i);
+            QList<int> eq = equivalences(id);
+            QStringList lbl;
+            for(int j = 0; j < eq.count(); ++j) {
+                lbl << compoIds.key(eq.at(j));
+            }
+            r += QString("%1 = %2\n").arg(compoIds.key(id)).arg(lbl.join(" ; "));
+            qWarning() << id << eq << "\n" << QString("%1 = %2\n").arg(compoIds.key(id)).arg(lbl.join(" ; "));
+        }
+        return r;
+    }
 
 protected:
     // In data
@@ -117,6 +155,7 @@ protected:
     QMultiHash<QString, QString> correctedByAtcCode;
     QHash<QString, int> compoIds;
     QHash<QString, int> atcCodeIds;
+    QMultiHash<int, int> _equivalences;
 };
 
 class DDI_EXPORT ComponentLinkerResult

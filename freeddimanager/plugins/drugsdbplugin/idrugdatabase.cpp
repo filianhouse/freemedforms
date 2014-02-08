@@ -1369,12 +1369,9 @@ bool IDrugDatabase::linkDrugsComponentsAndDrugInteractors()
     Q_EMIT progressRangeChanged(0, 2);
     Q_EMIT progress(0);
 
-//    // Associate Mol <-> ATC for drugs with one molecule only
-//    NEW
-    DDI::ComponentAtcModel *linkerModel = new DDI::ComponentAtcModel(this);
+    // Create component linker data
     DDI::ComponentLinkerData data;
     data.setAtcLanguage(_lang);
-
     // Get all ATC-codes
     QHash<QString, int> ids;
     QSqlQuery query(_database->database());
@@ -1408,7 +1405,73 @@ bool IDrugDatabase::linkDrugsComponentsAndDrugInteractors()
         LOG_QUERY_ERROR(query);
         return false;
     }
+    query.finish();
     data.setComponentIds(ids);
+
+    // Get all linked component (compo1 is linked to compo2 using LK_NATURE in compo table)
+    // TODO: this part could be improved using SQL specific commands... Any taker?
+    // For each drug, if one component is linked to another one, get the link between components
+    // QHash<QString, QString> compoLinkByLbl;
+    QTime chrono;
+    chrono.start();
+    QHash<int, QString> where;
+    where.insert(Constants::DRUGS_SID, QString("=%1").arg(_sid));
+    req = _database->select(Constants::Table_DRUGS, QList<int>()
+                            << Constants::DRUGS_DID, where);
+    if (query.exec(req)) {
+        while (query.next()) {
+            int did = query.value(0).toInt();
+            // Get full composition
+            QSqlQuery query2(_database->database());
+            QHash<int, QString> where2;
+            where2.insert(Constants::COMPO_DID, QString("=%1").arg(did));
+            QString req2 = _database->select(Constants::Table_COMPO, where2);
+            if (query2.exec(req2)) {
+                QMultiHash<int, int> linksCompoId;
+                QList<int> multi;
+                while (query2.next()) {
+                    // int compoId = query2.value(Constants::COMPO_ID).toInt();
+                    int molId = query2.value(Constants::COMPO_MID).toInt();
+                    int lk = query2.value(Constants::COMPO_LK_NATURE).toInt();
+                    if (linksCompoId.uniqueKeys().contains(lk))
+                        multi << lk;
+                    linksCompoId.insertMulti(lk, molId);
+                }
+
+                // Set equivalence in the data in class
+                for(int i=0; i < multi.count(); ++i) {
+                    const QList<int> &eq = linksCompoId.values(multi.at(i));
+                    if (eq.count() < 2) {
+                        LOG_ERROR(QString("Wrong number of link. DID: %1").arg(did));
+                        qWarning() << eq << multi.at(i) << linksCompoId;
+                    } else {
+                        for(int i = 0; i < eq.count(); ++i) {
+                            for(int j = 0; j < eq.count(); ++j) {
+                                if (i==j)
+                                    continue;
+                                data.addComponentEquivalence(eq.at(i), eq.at(j));
+                            }
+                        }
+                    }
+                }
+            } else {
+                LOG_QUERY_ERROR(query2);
+                return false;
+            }
+            query2.finish();
+        }
+    } else {
+        LOG_QUERY_ERROR(query);
+        return false;
+    }
+    query.finish();
+    Utils::Log::logTimeElapsed(chrono, "dd", "dd");
+
+    // qWarning() << data.debugEquivalences();
+
+    // Create the component to ATC model
+    DDI::ComponentAtcModel *linkerModel = new DDI::ComponentAtcModel(this);
+    linkerModel->selectDatabase(_dbUid1, _dbUid2);
 
     // Start the linking processus
     DDI::ComponentLinkerResult result = linkerModel->startComponentLinkage(data);

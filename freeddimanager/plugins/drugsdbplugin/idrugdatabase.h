@@ -94,6 +94,7 @@ public:
     virtual void setDisplayName(const QString &name) {_name=name;}
     virtual void setLicenseType(LicenseType type) {_licenseType=type;}
     virtual void setServerOwner(ServerOwner serverOwner) {_serverOwner=serverOwner;}
+    void setDatabaseUid(const QString &dbUid1, const QString dbUid2 = QString::null) {_dbUid1 = dbUid1; _dbUid2 = dbUid2;}
     void setTempPath(const QString &absPath);
     void setOutputPath(const QString &absPath);
     void setConnectionName(const QString &connection);
@@ -184,7 +185,7 @@ private:
     ServerOwner _serverOwner;
     QString _name, _tempPath, _outputPath, _connection, _outputFileName, _downloadingUrl;
     QString _finalizationScriptPath, _descriptionFilePath, _datapackDescriptionFilePath;
-    QString _spcDefaultEncoding;
+    QString _spcDefaultEncoding, _dbUid1, _dbUid2;
     QString _lang;
     int _sid;
     QList<QUrl> _spcUrls;

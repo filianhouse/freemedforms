@@ -83,6 +83,8 @@ FrDrugDatatabase::FrDrugDatatabase(QObject *parent) :
     m_WithProgress(false)
 {
     setObjectName("FrDrugDatatabase");
+    setDatabaseUid("FR_AFSSAPS");
+    setDatabaseLanguage("fr");
     setTempPath(QString("%1/%2")
                 .arg(settings()->value(Core::Constants::S_TMP_PATH).toString())
                 .arg("/FrenchRawSources/"));
@@ -295,16 +297,16 @@ bool FrDrugDatatabase::populateDatabase()
 
 //bool FrDrugDatatabase::linkMolecules()
 //{
-    //    Jan 2014
+    //    Feb 2014
     //    Refactoring the code for the FreeDDIManager
     //    ATC 5665
     //    NUMBER OF MOLECULES 5618
     //    HAND MADE ASSOCIATION 0
-    //    FOUNDED 2001 components
-    //    LINKERMODEL (WithATC:538;WithoutATC:824) 1362
-    //    LINKERNATURE 0
-    //    LEFT 1790
-    //    CONFIDENCE INDICE 67.4071
+    //    FOUNDED 2913 components
+    //    LINKERMODEL 896
+    //    LINKERNATURE
+    //    LEFT 1476 (sans les molécules homéopathiques)
+    //    CONFIDENCE INDICE 74.6529
 
 //    // 21 May 2013
 //    //    NUMBER OF MOLECULES 5492
