@@ -105,14 +105,11 @@ public:
         // save using all associated ATC codes
         const QStringList &atcCodes = interactor->data(DrugInteractor::ATCCodeStringList).toStringList();
         if (atcCodes.isEmpty() && !interactor->isClass() && parent && parent->isClass()) {
-            //        QString req = QString("INSERT INTO ATC_CLASS_TREE (ID_TREE, ID_CLASS, ID_ATC) VALUES "
-            //                              "(NULL, %1,%2);")
-            //                .arg(parent->data(CLASS_OR_MOL_ID).toString())
-            //                .arg(interactor->data(CLASS_OR_MOL_ID).toString());
             query.prepare(database->prepareInsertQuery(DrugsDB::Constants::Table_ATC_CLASS_TREE));
             query.bindValue(DrugsDB::Constants::ATC_CLASS_TREE_ID, QVariant());
             query.bindValue(DrugsDB::Constants::ATC_CLASS_TREE_ID_ATC, interactor->data(CLASS_OR_MOL_ID).toString());
             query.bindValue(DrugsDB::Constants::ATC_CLASS_TREE_ID_CLASS, parent->data(CLASS_OR_MOL_ID).toString());
+            // TODO: manage ClassTreeATC Bibliography
             query.bindValue(DrugsDB::Constants::ATC_CLASS_TREE_BIBMASTERID, QVariant());
 
             if (!query.exec()) {
@@ -123,10 +120,6 @@ public:
             query.finish();
         } else if (!atcCodes.isEmpty() && !interactor->isClass() && parent && parent->isClass()) {
             foreach(const QString &atc, atcCodes) {
-                //            QString req = QString("INSERT INTO ATC_CLASS_TREE (ID_TREE, ID_CLASS, ID_ATC) VALUES "
-                //                                  "(NULL, %1, (SELECT ATC_ID FROM ATC WHERE CODE=\"%2\"));")
-                //                    .arg(parent->data(CLASS_OR_MOL_ID).toString()).arg(atc);
-
                 QString atcId;
                 QHash<int, QString> w;
                 w.insert(DrugsDB::Constants::ATC_CODE, QString("='%1'").arg(atc));
@@ -289,9 +282,6 @@ public:
                     }
                     query.finish();
 
-                    //                req = QString("INSERT INTO INTERACTIONS (ATC_ID1, ATC_ID2) VALUES (%1, %2);")
-                    //                        .arg(QString("(SELECT ATC_ID FROM ATC WHERE CODE=\"%1\")").arg(a1))
-                    //                        .arg(QString("(SELECT ATC_ID FROM ATC WHERE CODE=\"%1\")").arg(a2));
                     query.prepare(database->prepareInsertQuery(DrugsDB::Constants::Table_INTERACTIONS));
                     query.bindValue(DrugsDB::Constants::INTERACTIONS_IAID, QVariant());
                     query.bindValue(DrugsDB::Constants::INTERACTIONS_ATC_ID1, atcId1);
@@ -310,9 +300,6 @@ public:
                     query.finish();
 
                     // mirror DDI
-                    //                req = QString("INSERT INTO INTERACTIONS (ATC_ID2, ATC_ID1) VALUES (%1, %2);")
-                    //                        .arg(QString("(SELECT ATC_ID FROM ATC WHERE CODE=\"%1\")").arg(a1))
-                    //                        .arg(QString("(SELECT ATC_ID FROM ATC WHERE CODE=\"%1\")").arg(a2));
                     query.prepare(database->prepareInsertQuery(DrugsDB::Constants::Table_INTERACTIONS));
                     query.bindValue(DrugsDB::Constants::INTERACTIONS_IAID, QVariant());
                     query.bindValue(DrugsDB::Constants::INTERACTIONS_ATC_ID1, atcId2);
@@ -345,12 +332,6 @@ public:
                 return false;
 
             // Add IAK
-            //        req = QString("INSERT INTO IAKNOWLEDGE (IAKID, TYPE, RISK_MASTER_LID, MAN_MASTER_LID) VALUES "
-            //                      "(NULL, \"%1\", %2, %3)")
-            //                .arg(ddi->data(DrugDrugInteraction::LevelCode).toString())
-            //                .arg(riskMasterLid)
-            //                .arg(manMasterLid);
-
             query.prepare(database->prepareInsertQuery(DrugsDB::Constants::Table_IAKNOWLEDGE));
             query.bindValue(DrugsDB::Constants::IAKNOWLEDGE_IAKID, QVariant());
             query.bindValue(DrugsDB::Constants::IAKNOWLEDGE_TYPE, ddi->data(DrugDrugInteraction::LevelCode).toString());
@@ -372,10 +353,6 @@ public:
 
             // Add to IA_IAK link table
             foreach(const int ia, ia_ids) {
-                //            req = QString("INSERT INTO IA_IAK (IAID, IAKID) VALUES (%1,%2)")
-                //                    .arg(ia)
-                //                    .arg(iak_id)
-                //                    ;
                 query.prepare(database->prepareInsertQuery(DrugsDB::Constants::Table_IA_IAK));
                 query.bindValue(DrugsDB::Constants::IA_IAK_IAID, ia);
                 query.bindValue(DrugsDB::Constants::IA_IAK_IAKID, iak_id);
