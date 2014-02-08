@@ -302,11 +302,11 @@ bool FrDrugDatatabase::populateDatabase()
     //    ATC 5665
     //    NUMBER OF MOLECULES 5618
     //    HAND MADE ASSOCIATION 0
-    //    FOUNDED 2913 components
-    //    LINKERMODEL 896
+    //    FOUNDED 2677 components
+    //    LINKERMODEL 901
     //    LINKERNATURE
-    //    LEFT 1476 (sans les molécules homéopathiques)
-    //    CONFIDENCE INDICE 74.6529
+    //    LEFT 1707 (sans les molécules homéopathiques)
+    //    CONFIDENCE INDICE 70.6123
 
 //    // 21 May 2013
 //    //    NUMBER OF MOLECULES 5492
