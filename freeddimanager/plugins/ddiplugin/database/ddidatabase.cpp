@@ -934,7 +934,7 @@ int DDIDatabase::insertComponentAtcLinkageFromXml(const QString &fileName)
             query.bindValue(Constants::COMPO_ISREVIEWED, element.attribute("review")=="true"?"1":"0");
             query.bindValue(Constants::COMPO_LABEL, element.attribute("name"));
             query.bindValue(Constants::COMPO_ATCCODES, element.attribute("AtcCode").replace(",", ";"));
-            query.bindValue(Constants::COMPO_SUGGESTED, element.attribute("autofound"));
+            query.bindValue(Constants::COMPO_SUGGESTED, element.attribute("autofound").replace(",", ";"));
             query.bindValue(Constants::COMPO_DATECREATE, QDate(2008,1,1));
             query.bindValue(Constants::COMPO_DATEUPDATE, element.attribute("dateofreview"));
             query.bindValue(Constants::COMPO_REVIEWERS, element.attribute("reviewer"));
