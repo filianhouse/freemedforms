@@ -93,14 +93,14 @@ public:
     Qt::ItemFlags flags(const QModelIndex &index) const;
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const;
 
-    bool addUnreviewedMolecules(const QString &dbUid, const QStringList &molecules);
-    bool addAutoFoundMolecules(const QMultiHash<QString, QString> &mol_atc, bool removeFromModel = false);
-
+    QString overview() const;
     ComponentLinkerResult &startComponentLinkage(const ComponentLinkerData &data);
 
 public Q_SLOTS:
     void setActualReviewer(const QString &name);
     int removeUnreviewedMolecules();
+
+    bool submitAll();
 
 private:
     Internal::ComponentAtcModelPrivate *d;

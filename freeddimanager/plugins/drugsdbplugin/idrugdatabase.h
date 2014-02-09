@@ -30,12 +30,14 @@
 #include <QObject>
 #include <QList>
 #include <QVector>
+#include <QHash>
+#include <QMultiHash>
 
 /**
  * \file idrugdatabase.h
  * \author Eric Maeker
  * \version 0.10.0
- * \date 10 Jan 2014
+ * \date 10 Feb 2014
 */
 
 namespace DrugsDB {

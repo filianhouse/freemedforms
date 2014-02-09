@@ -29,6 +29,7 @@
  * This model holds information about drug's component and
  * their link to any ATC code(s). \n
  * This model is not in manual submit but this should be configurable.
+ * To save data to the database, call submitAll().
 */
 
 #include "componentatcmodel.h"
@@ -202,11 +203,118 @@ public:
         } else {
             LOG_QUERY_ERROR_FOR(q, query);
             query.finish();
+            db.rollback();
             return atcCodeToName;
         }
         query.finish();
         db.commit();
         return atcCodeToName;
+    }
+
+    // Add ATC suggestion to the components
+    // QHash key is the exact component label (with accents), ATC suggested represents
+    // the list of ATC code coma separated
+    // You must surround any call to this member with beginResetModel() and endResetModel()
+    bool saveComponentsAndSuggestions(const QHash<QString, QString> &compoLblToAtcSuggested,
+                                      const QStringList &knownComponents)
+    {
+        QSqlDatabase db = ddiBase().database();
+        if (!db.isOpen()) {
+            return false;
+        }
+        db.transaction();
+        QSqlQuery query(db);
+        QHash<int, QString> where;
+        QStringList alreadySuggested;
+        LOG_FOR(q, QString("Saving %1 ATC link suggestions").arg(compoLblToAtcSuggested.count()));
+
+        // Save all components that are not already in the database
+        foreach(const QString &lbl, knownComponents) {
+            QString sqlLbl = lbl.toUpper();
+            sqlLbl = sqlLbl.replace("''", "'");
+            sqlLbl = sqlLbl.replace("'", "''");
+            where.insert(Constants::COMPO_LABEL, QString("='%1'").arg(sqlLbl));
+            if (ddiBase().count(Constants::Table_COMPONENTS,
+                                Constants::COMPO_ID,
+                                ddiBase().getWhereClause(Constants::Table_COMPONENTS, where)) == 0) {
+                // Insert a new line in the database
+                QString req = ddiBase().prepareInsertQuery(Constants::Table_COMPONENTS);
+                query.prepare(req);
+                query.bindValue(Constants::COMPO_ID, QVariant());
+                query.bindValue(Constants::COMPO_UID, Constants::correctedUid(lbl));
+                query.bindValue(Constants::COMPO_DRUGDB_UID1, _dbUid1);
+                query.bindValue(Constants::COMPO_DRUGDB_UID2, _dbUid2);
+                query.bindValue(Constants::COMPO_ISVALID, 1);
+                query.bindValue(Constants::COMPO_ISREVIEWED, 0);
+                query.bindValue(Constants::COMPO_LABEL, lbl);
+                query.bindValue(Constants::COMPO_ATCCODES, QVariant());
+                query.bindValue(Constants::COMPO_SUGGESTED, alreadySuggested.join(";"));
+                query.bindValue(Constants::COMPO_DATECREATE, QDate::currentDate().toString(Qt::ISODate));
+                query.bindValue(Constants::COMPO_DATEUPDATE, QDate::currentDate().toString(Qt::ISODate));
+                query.bindValue(Constants::COMPO_REVIEWERS, QVariant());
+                query.bindValue(Constants::COMPO_COMMENT, QVariant());
+
+                qWarning() << "inserted" << lbl << alreadySuggested.join(";");
+
+                if (!query.exec()) {
+                    LOG_QUERY_ERROR_FOR(q, query);
+                    query.finish();
+                    db.rollback();
+                    return false;
+                }
+            }
+        }
+        db.commit();
+
+        db.transaction();
+        // Save suggested ATC codes
+        // TODO: manage component equivalence +++
+
+        foreach(const QString &lbl, compoLblToAtcSuggested.keys()) {
+            alreadySuggested.clear();
+            QString sqlLbl = lbl.toUpper();
+            sqlLbl = sqlLbl.replace("''", "'");
+            sqlLbl = sqlLbl.replace("'", "''");
+            where.insert(Constants::COMPO_LABEL, QString("='%1'").arg(sqlLbl));
+
+            // Get the suggested ATC code list for the component
+            QString req = ddiBase().select(Constants::Table_COMPONENTS, Constants::COMPO_SUGGESTED, where);
+            if (query.exec(req)) {
+                if (query.next())
+                    alreadySuggested = query.value(0).toString().split(";", QString::SkipEmptyParts);
+            } else {
+                LOG_QUERY_ERROR_FOR(q, query);
+                query.finish();
+                db.rollback();
+                return false;
+            }
+            query.finish();
+
+            // Add new ATC, remove duples and save to database
+            alreadySuggested << compoLblToAtcSuggested.value(lbl).split(";", QString::SkipEmptyParts);
+            alreadySuggested.removeDuplicates();
+
+            // Update the line
+            req = ddiBase().prepareUpdateQuery(Constants::Table_COMPONENTS, QList<int>()
+                                               << Constants::COMPO_SUGGESTED
+                                               << Constants::COMPO_DATEUPDATE, where);
+            query.prepare(req);
+            query.bindValue(0, alreadySuggested.join(";"));
+            query.bindValue(1, QDate::currentDate().toString(Qt::ISODate));
+
+            qWarning() << "updated" << lbl << alreadySuggested.join(";");
+
+            if (!query.exec()) {
+                LOG_QUERY_ERROR_FOR(q, query);
+                query.finish();
+                db.rollback();
+                return false;
+            }
+            query.finish();
+        }
+        query.finish();
+        db.commit();
+        return true;
     }
 
 public:
@@ -449,80 +557,51 @@ QVariant ComponentAtcModel::headerData(int section, Qt::Orientation orientation,
     return QVariant();
 }
 
-bool ComponentAtcModel::addUnreviewedMolecules(const QString &dbUid, const QStringList &molecules)
+/**
+ * Returns a human readable overview of the model (number of components,
+ * number of linked component, number non linked but suggested...)
+ */
+QString ComponentAtcModel::overview() const
 {
-//    QDomElement el = d->m_RootNode.firstChildElement("Database");
-//    while (!el.isNull()) {
-//        if (el.attribute("uid").compare(dbUid, Qt::CaseInsensitive) == 0) {
-//            break;
-//        }
-//        el = el.nextSiblingElement("Database");
-//    }
+    QStringList r;
+    r << tr("Total: %1").arg(d->_sql->rowCount());
+    QSqlDatabase db = ddiBase().database();
+    if (!db.isOpen()) {
+        LOG_ERROR("Can not connect to DDI::DDIDatabase");
+        return QString::null;
+    }
 
-//    if (el.isNull())
-//        return false;
+    QHash<int, QString> where;
+    where.insert(Constants::COMPO_ISVALID, "=1");
+    where.insert(Constants::COMPO_DRUGDB_UID1, QString("='%1'").arg(d->_dbUid1));
+    if (!d->_dbUid2.isEmpty())
+        where.insert(Constants::COMPO_DRUGDB_UID2, QString("='%1'").arg(d->_dbUid2));
 
-//    selectDatabase(dbUid);
+    // With ATC codes
+    where.insert(Constants::COMPO_ATCCODES, "<> ''");
+    int count = ddiBase().count(Constants::Table_COMPONENTS,
+                        Constants::COMPO_ID,
+                        ddiBase().getWhereClause(Constants::Table_COMPONENTS, where));
+    r << tr("+Atc: %1").arg(count);
 
-//    QStringList known;
-//    for(int i=0; i < rowCount(); ++i) {
-//        known << index(i, MoleculeName).data().toString();
-//    }
-//    known.removeDuplicates();
-//    known.removeAll("");
+    // Without ATC codes but with suggestion
+    where.insert(Constants::COMPO_ATCCODES, "= ''");
+    where.insert(Constants::COMPO_SUGGESTED, "<> ''");
+    count = ddiBase().count(Constants::Table_COMPONENTS,
+                        Constants::COMPO_ID,
+                        ddiBase().getWhereClause(Constants::Table_COMPONENTS, where));
+    r << tr("-Atc+Sugg: %1").arg(count);
 
-//    foreach(const QString &mol, molecules) {
-//        if (mol.isEmpty())
-//            continue;
-//        if (known.contains(mol, Qt::CaseInsensitive))
-//            continue;
-//        QDomElement newmol = d->domDocument.createElement("Molecule");
-//        newmol.setAttribute("name", mol);
-//        newmol.setAttribute("AtcCode", QString());
-//        newmol.setAttribute("review", "false");
-//        newmol.setAttribute("reviewer", QString());
-//        newmol.setAttribute("references", QString());
-//        newmol.setAttribute("comment", QString());
-//        newmol.setAttribute("dateofreview", QString());
-//        el.appendChild(newmol);
-//        known << mol;
-//    }
-
-//    reset();
-    return true;
+    // Total reviewed
+     where.insert(Constants::COMPO_ISREVIEWED, "=1");
+     where.remove(Constants::COMPO_ATCCODES);
+     where.remove(Constants::COMPO_SUGGESTED);
+     count = ddiBase().count(Constants::Table_COMPONENTS,
+                         Constants::COMPO_ID,
+                         ddiBase().getWhereClause(Constants::Table_COMPONENTS, where));
+     r << tr("Reviewed: %1").arg(count);
+    return r.join(" ; ");
 }
-
-bool ComponentAtcModel::addAutoFoundMolecules(const QMultiHash<QString, QString> &mol_atc, bool removeFromModel)
-{
-//    int nb = 0;
-//    foreach(const QString &mol, mol_atc.keys()) {
-//        QDomNode n = d->m_RootItem->node().firstChild();
-
-//         while (!n.isNull()) {
-//             QDomNamedNodeMap attributeMap = n.attributes();
-//             if (attributeMap.namedItem("name").nodeValue() == mol) {
-//                 if (removeFromModel) {
-//                     const QStringList &list = mol_atc.values(mol);
-//                     n.toElement().setAttribute("autofound", list.join(","));
-//                     QDomNode rem = d->m_RootItem->node().removeChild(n);
-//                 } else {
-//                     const QStringList &list = mol_atc.values(mol);
-//                     n.toElement().setAttribute("autofound", list.join(","));
-//                 }
-//                 ++nb;
-//                 break;
-//             }
-//             n = n.nextSibling();
-//         }
-//    }
-    return true;
-}
-
-struct MolLink {
-    int lk_nature;
-    int mol;
-    QString mol_form;
-};
 
 /**
  * Create the link between drugs components and drug interactors / ATC codes. \n
@@ -546,170 +625,153 @@ ComponentLinkerResult &ComponentAtcModel::startComponentLinkage(const ComponentL
     const QStringList &knownComponentNames = data.compoIds.uniqueKeys();
     LOG(QString("Number of distinct molecules: %1").arg(knownComponentNames.count()));
 
-    // Manage hand-made components link by ATC label
-    int corrected = 0;
-    foreach(const QString &componentLbl, data.correctedByName.keys()) {
+    // Algorythm is be centered on the model data and automatic associations are only suggested
+    // Create links using the model data (reviewed items)
+    // For all items, try to find link -> then populate the model
+    // This will allow to correct wrong automatic association
+
+    // Ask the current model database for links (DDI::COMPO table)
+    db.transaction();
+    int z = 0;
+    QSqlQuery query(db);
+    QString req;
+    QHash<int, QString> where;
+    where.insert(Constants::COMPO_ISVALID, "=1");
+    where.insert(Constants::COMPO_ISREVIEWED, "=1");
+    where.insert(Constants::COMPO_DRUGDB_UID1, QString("='%1'").arg(d->_dbUid1));
+    if (!d->_dbUid2.isEmpty())
+        where.insert(Constants::COMPO_DRUGDB_UID2, QString("='%1'").arg(d->_dbUid2));
+
+    foreach(const QString &componentLbl, knownComponentNames) {
+        // Should we search for labels or Constants::correctedUid()?
         QString lbl = componentLbl.toUpper();
-        if (!knownComponentNames.contains(lbl))
+        QString sqlName = lbl;
+        sqlName = sqlName.replace("''","'");
+        sqlName = sqlName.replace("'", "''");
+        where.insert(Constants::COMPO_LABEL, QString("='%1'").arg(sqlName));
+        req = ddiBase().select(Constants::Table_COMPONENTS, QList<int>()
+                               << Constants::COMPO_ATCCODES, where);
+        if (query.exec(req)) {
+            if (query.next()) {
+                QString atcCodes = query.value(0).toString().simplified();
+                // FIXME: One component can have multiple id?
+                QList<int> componentIds = data.compoIds.values(componentLbl);
+                if (!atcCodes.isEmpty()) {
+                    foreach(const QString &code, atcCodes.split(";", QString::SkipEmptyParts)) {
+                        int atcId = data.atcCodeIds.value(code);
+                        for(int i =0; i < componentIds.count(); ++i)
+                            result->addComponentToAtcLink(componentIds.at(i), atcId, data);
+                    }
+                } else {
+                    for(int i = 0; i < componentIds.count(); ++i)
+                        result->addComponentWithoutAtcLink(componentIds.at(i), data);
+                }
+                ++z;
+            }
+        } else {
+            LOG_QUERY_ERROR(query);
             continue;
-        // Get ATC id from the ATC name
-        int componentId = data.compoIds.value(lbl);
-        const QStringList &atcCodes = atcCodeToName.keys(data.correctedByName.value(lbl));
-        foreach(const QString &atcCode, atcCodes) {
-            int atcId = data.atcCodeIds.value(atcCode);
-            corrected++;
-            result->addComponentToAtcLink(componentId, atcId, data);
         }
+        query.finish();
     }
+    qWarning() << "MODEL " << z;
 
-    // Manage hand-made components link by ATC codes
-    foreach(const QString &componentLbl, data.correctedByAtcCode.uniqueKeys()) {  // Key=componentLbl, Val=ATC
-        if (!knownComponentNames.contains(componentLbl))
-            continue;
-        int componentId = data.compoIds.value(componentLbl);
-        const QStringList &atcCodes = data.correctedByAtcCode.values(componentLbl);
-        foreach(const QString &atcCode, atcCodes) {
-            int atcId = data.atcCodeIds.value(atcCode);
-            corrected++;
-            result->addComponentToAtcLink(componentId, atcId, data);
-        }
-    }
-    LOG(QString("Hand made association: %1").arg(corrected));
-    result->addMessage(QString("Hand made association: %1").arg(corrected));
+    // Try to find component / ATC links & suggest to the user
+    QHash<QString, QString> compoLblToAtcSuggested;
 
-    // Find component / ATC links
-
-    // First pass: find exact match component label <-> atc label
-    foreach(QString componentLbl, knownComponentNames) {
+    // TODO: During this process, we should manage component equivalence (in comment? add links?)
+    // First pass: For all components, try to find exact match component label <-> atc label
+    foreach(const QString &componentLbl, knownComponentNames) {
         if (componentLbl.isEmpty())
             continue;
-        QList<int> compoIds = data.compoIds.values(componentLbl);
+        if (compoLblToAtcSuggested.contains(componentLbl))
+            continue;
+
         // Always remove accents for ATC autochecking (ATC labels are retrieved without accents)
-        componentLbl = Utils::removeAccents(componentLbl);
-        foreach(const int componentId, compoIds) {
-            // Already processed?
-            if (result->containsComponentId(componentId)) {
-                LOG(QString("Already processed: %1").arg(componentLbl));
-                continue;
-            }
+        // Does component name exact-matches an ATC label
+        QString transformedLbl = Utils::removeAccents(componentLbl);
+        QStringList atcCodes = atcCodeToName.keys(transformedLbl);
 
-            // Does component name exact-matches an ATC label
-            QString transformedLbl = componentLbl;
-            QStringList atcCodes = atcCodeToName.keys(transformedLbl);
-
-            // Now check if we find something
-            if (!atcCodes.isEmpty()) {
-                // Matches -> add id links
-                foreach(const QString &atcCode, atcCodes) {
-                    int atcId = data.atcCodeIds.value(atcCode);
-                    result->addComponentToAtcLink(componentId, atcId, data);
-                }
-            }
-
+        // Now check if we find something
+        if (!atcCodes.isEmpty()) {
+            compoLblToAtcSuggested.insert(componentLbl, atcCodes.join(";"));
         }
     }
 
     // Second pass: find non-exact match component label (without prefix) <-> atc label
-    foreach(QString componentLbl, knownComponentNames) {
+    foreach(const QString &componentLbl, knownComponentNames) {
         if (componentLbl.isEmpty())
             continue;
-        QList<int> compoIds = data.compoIds.values(componentLbl);
+        if (compoLblToAtcSuggested.contains(componentLbl))
+            continue;
+
         // Always remove accents for ATC autochecking (ATC labels are retrieved without accents)
-        componentLbl = Utils::removeAccents(componentLbl);
+        // Component name does not exact-matches an ATC label (already tested)
+        // And the component is not already found using component linking
+        QString transformedLbl = Utils::removeAccents(componentLbl);
+        QStringList atcCodes;
 
-        foreach(const int componentId, compoIds) {
-            // Already processed?
-            if (result->containsComponentId(componentId)) {
-                LOG(QString("Already processed: %1").arg(componentLbl));
-                continue;
+        // Try to find the ATC label using component name transformation
+        // -> Remove prefix: CHLORHYDRATE DE, ACETATE DE
+        QStringList toRemove;
+        toRemove << "CHLORHYDRATE DE" << "CHLORHYDRATE D'"
+                 << "ACETATE DE" << "ACETATE D'"
+                 << "MONOHYDRATE DE" << "MONOHYDRATE D'"
+                 << "SULFATE DE" << "SULFATE D'"
+                 << "BISULFATE DE" << "BISULFATE D'"
+                 << "TRINITRATE D'" << "TRINITRATE DE"
+                 << "DINITRATE D'" << "DINITRATE DE"
+                 << "NITRATE D'" << "NITRATE DE";
+        foreach(const QString &prefix, toRemove) {
+            if (transformedLbl.startsWith(prefix)) {
+                QString tmp = transformedLbl;
+                tmp.remove(prefix);
+                tmp = tmp.simplified();
+                atcCodes << atcCodeToName.keys(tmp);
             }
+        }
 
-            // Component name does not exact-matches an ATC label (already tested)
-            // And the component is not already found using component linking
-            QString transformedLbl = componentLbl;
-            QStringList atcCodes;
-
-            // Try to find the ATC label using component name transformation
-            // -> Remove prefix: CHLORHYDRATE DE, ACETATE DE
-            QStringList toRemove;
-            toRemove << "CHLORHYDRATE DE" << "CHLORHYDRATE D'"
-                     << "ACETATE DE" << "ACETATE D'"
-                     << "MONOHYDRATE DE" << "MONOHYDRATE D'"
-                     << "SULFATE DE" << "SULFATE D'"
-                     << "BISULFATE DE" << "BISULFATE D'"
-                     << "TRINITRATE D'" << "TRINITRATE DE"
-                     << "DINITRATE D'" << "DINITRATE DE"
-                     << "NITRATE D'" << "NITRATE DE";
-            transformedLbl = componentLbl;
-            foreach(const QString &prefix, toRemove) {
-                if (transformedLbl.startsWith(prefix)) {
-                    QString tmp = transformedLbl;
-                    tmp.remove(prefix);
-                    tmp = tmp.simplified();
-                    atcCodes = atcCodeToName.keys(tmp);
-                    if (atcCodes.count() > 0) {
-                        result->addMessage(QString("Non exact-match: %1 - %2").arg(QString("removed %1").arg(prefix)).arg(componentLbl));
-                        LOG(QString("Non exact-match: %1 - %2").arg(QString("removed %1").arg(prefix)).arg(componentLbl));
-                        break;
-                    }
-                }
-            }
-
-            // Now we checked all possibilities, check if we found something
-            if (!atcCodes.isEmpty()) {
-                // Matches -> add id links
-                foreach(const QString &atcCode, atcCodes) {
-                    int atcId = data.atcCodeIds.value(atcCode);
-                    result->addComponentToAtcLink(componentId, atcId, data);
-                }
-            }
+        // Now check if we find something
+        if (!atcCodes.isEmpty()) {
+            compoLblToAtcSuggested.insert(componentLbl, atcCodes.join(";"));
         }
     }
 
     // Third pass: find non-exact match component label (remove (*)) <-> atc label
-    foreach(QString componentLbl, knownComponentNames) {
+    foreach(const QString &componentLbl, knownComponentNames) {
         if (componentLbl.isEmpty())
             continue;
-        QList<int> compoIds = data.compoIds.values(componentLbl);
+        if (compoLblToAtcSuggested.contains(componentLbl))
+            continue;
+
         // Always remove accents for ATC autochecking (ATC labels are retrieved without accents)
-        componentLbl = Utils::removeAccents(componentLbl);
-        foreach(const int componentId, compoIds) {
-            // Already processed?
-            if (result->containsComponentId(componentId)) {
-                LOG(QString("Already processed: %1").arg(componentLbl));
-                continue;
-            }
+        // Component name does not exact-matches an ATC label (already tested)
+        // And the component is not already found using component linking
+        QString transformedLbl = Utils::removeAccents(componentLbl);
+        QStringList atcCodes;
 
-            // Component name does not exact-matches an ATC label (already tested)
-            // And the component is not already found using component linking
-            QString transformedLbl = componentLbl;
-            QStringList atcCodes;
-
-            // Try to find the ATC label using component name transformation
-            // Not found try some transformations
-            // remove '(*)'
-            if (componentLbl.contains("(")) {
-                transformedLbl = componentLbl.left(componentLbl.indexOf("(")).simplified();
-                atcCodes = atcCodeToName.keys(transformedLbl);
-                if (atcCodes.count() > 0) {
-                    result->addMessage(QString("Non exact-match: %1 - %2").arg("()").arg(componentLbl));
-                    LOG(QString("Non exact-match: %1 - %2").arg("()").arg(componentLbl));
-                }
-            }
-
-            // Now we checked all possibilities, check if we found something
-            if (!atcCodes.isEmpty()) {
-                // Matches -> add id links
-                foreach(const QString &atcCode, atcCodes) {
-                    int atcId = data.atcCodeIds.value(atcCode);
-                    result->addComponentToAtcLink(componentId, atcId, data);
-                }
-            }
+        // Try to find the ATC label using component name transformation
+        // Not found try some transformations
+        // remove '(*)'
+        if (componentLbl.contains("(")) {
+            transformedLbl = componentLbl.left(componentLbl.indexOf("(")).simplified();
+            atcCodes = atcCodeToName.keys(transformedLbl);
         }
+
+        // Now check if we find something
+        if (!atcCodes.isEmpty()) {
+            compoLblToAtcSuggested.insert(componentLbl, atcCodes.join(";"));
+        }
+
     }
 
-    LOG(QString("Automatic association (number of components): %1").arg(result->componentIdToAtcId().uniqueKeys().count()));
-    result->addMessage(QString("Automatic association (number of components): %1").arg(result->componentIdToAtcId().uniqueKeys().count()));
+    LOG(QString("Suggestion found (number of components): %1").arg(result->componentIdToAtcId().uniqueKeys().count()));
+    result->addMessage(QString("Suggestion found (number of components): %1").arg(result->componentIdToAtcId().uniqueKeys().count()));
+
+    // Send suggestion to the current model
+    beginResetModel();
+    d->saveComponentsAndSuggestions(compoLblToAtcSuggested, knownComponentNames);
+    endResetModel();
 
     // Recreate unfound components list
     QHash<int, QString> unfoundComponents;
@@ -725,212 +787,6 @@ ComponentLinkerResult &ComponentAtcModel::startComponentLinkage(const ComponentL
         }
     }
 
-    // Ask the database for unfound links (COMPO table)
-    db.transaction();
-    int z = 0;
-    QSqlQuery query(db);
-    QString req;
-    QHash<int, QString> where;
-    where.insert(Constants::COMPO_ISVALID, "=1");
-    where.insert(Constants::COMPO_ISREVIEWED, "=1");
-    where.insert(Constants::COMPO_DRUGDB_UID1, QString("='%1'").arg(d->_dbUid1));
-    if (!d->_dbUid2.isEmpty())
-        where.insert(Constants::COMPO_DRUGDB_UID2, QString("='%1'").arg(d->_dbUid2));
-    QHash<int, QString>::const_iterator it = unfoundComponents.constBegin();
-    while (it != unfoundComponents.constEnd()) {
-        // Should we search for labels or Constants::correctedUid()?
-        QString sqlName = it.value();
-        sqlName = sqlName.replace("''","'");
-        sqlName = sqlName.replace("'", "''");
-        where.insert(Constants::COMPO_LABEL, QString("='%1'").arg(sqlName));
-        req = ddiBase().select(Constants::Table_COMPONENTS, QList<int>()
-                               << Constants::COMPO_ATCCODES, where);
-        if (query.exec(req)) {
-            if (query.next()) {
-                QString atcCodes = query.value(0).toString().simplified();
-                int componentId = it.key();
-                if (!atcCodes.isEmpty()) {
-                    foreach(const QString &code, atcCodes.split(";", QString::SkipEmptyParts)) {
-                        int atcId = data.atcCodeIds.value(code);
-                        result->addComponentToAtcLink(componentId, atcId, data);
-                    }
-                } else {
-                    result->addComponentWithoutAtcLink(componentId, data);
-                }
-                ++z;
-                unfoundComponents.remove(it.key());
-            }
-        } else {
-            LOG_QUERY_ERROR(query);
-            continue;
-        }
-        ++it;
-        query.finish();
-    }
-    db.commit();
-    qWarning() << "MODEL " << z;
-
-    // TODO: Try to find ATC links using component nature links
-
-    // TODO: send result informations to the database:
-    //          - auto-suggested atc (auto-reviewed) exact match component label <-> atc label
-    //          - auto-suggested atc (non reviewed) non-exact match component label <-> atc label
-    //          - add unfound components (not matched, not alredy inside the model)
-
-//    // Inform model of founded links
-//    QMultiHash<QString, QString> mol_atc_forModel;
-//    QHashIterator<int,int> it(data->moleculeIdToAtcId);
-//    while (it.hasNext()) {
-//        it.next();
-//        mol_atc_forModel.insertMulti(mols.key(it.key()), atc_id.key(it.value()));
-//    }
-//    addAutoFoundMolecules(mol_atc_forModel);
-//    mol_atc_forModel.clear();
-
-//    // Try to find molecules in the ComponentAtcModel
-//    QHash<QString, QString> model_mol_atc;
-//    int modelFound = 0;
-//    int reviewedWithoutAtcLink = 0;
-//    selectDatabase(data->drugDbUid);
-//    while (canFetchMore(QModelIndex()))
-//        fetchMore(QModelIndex());
-
-//    for(int i=0; i< rowCount(); ++i) {
-//        if (index(i, ComponentAtcModel::Review).data().toString() == "true") {
-//            model_mol_atc.insert(index(i, ComponentAtcModel::MoleculeName).data().toString(),
-//                                 index(i, ComponentAtcModel::ATC_Code).data().toString());
-//        }
-//    }
-//    qWarning() << "ComponentAtcModel::AvailableLinks" << model_mol_atc.count();
-
-//    foreach(const QString &mol, data->unfoundMoleculeAssociations) {
-//        if (model_mol_atc.keys().contains(mol)) {
-//            int codeMol = mols.value(mol);
-//            if (!data->moleculeIdToAtcId.keys().contains(codeMol)) {
-//                if (model_mol_atc.value(mol).trimmed().isEmpty()) {
-//                    ++reviewedWithoutAtcLink;
-//                    continue;
-//                }
-//                QStringList atcCodes = model_mol_atc.value(mol).split(",");
-//                foreach(const QString &atcCode, atcCodes) {
-//                    QString atcName = atcName_id.key(atc_id.value(atcCode));
-//                    QList<int> atcIds = atcName_id.values(atcName);
-//                    foreach(int id, atcIds) {
-//                        data->moleculeIdToAtcId.insertMulti(codeMol, id);
-//                        qWarning() << "ModelLinker Found" << codeMol << mol << id << atcName_id.key(id);
-//                        data->unfoundMoleculeAssociations.removeAll(mol);
-//                    }
-//                    if (atcIds.count())
-//                        ++modelFound;
-//                }
-//            }
-//        }
-//    }
-
-//    // TODO: Try to find new associations via the COMPOSITION.LK_NATURE field
-//    int natureLinkerNb = 0;
-////    if (drugsDbUid == "FR_AFSSAPS") {
-////        // TODO: code here */
-////        QMap<int, QMultiHash<int, int> > cis_codeMol_lk;
-////        QMap<int, QVector<MolLink> > cis_compo;
-////        {
-////            //            QString req = "SELECT `DID`, `MID`, `LK_NATURE` FROM `COMPOSITION` ORDER BY `DID`";
-////            QString req = database->select(Table_COMPO, QList<int>()
-////                                                             << COMPO_DID
-////                                                             << COMPO_MID
-////                                                             << COMPO_LK_NATURE
-////                                                             );
-////            req += QString(" ORDER BY `%1`").arg(database->fieldName(Table_COMPO, COMPO_DID));
-////            if (query.exec(req)) {
-////                while (query.next()) {
-////                    QVector<MolLink> &receiver = cis_compo[query.value(0).toInt()];
-////                    MolLink lk;
-////                    lk.mol = query.value(1).toInt();
-////                    lk.lk_nature = query.value(2).toInt();
-////                    //                    lk.mol_form = query.value(3).toString();
-////                    receiver.append(lk);
-////                }
-////            } else {
-////                LOG_QUERY_ERROR(query);
-////            }
-////            QMutableMapIterator<int, QVector<MolLink> > i(cis_compo);
-////            while (i.hasNext()) {
-////                i.next();
-////                const QVector<MolLink> &links = i.value();
-////                QMultiHash<int, int> lk_mol;
-////                QMultiHash<int, QString> lk_form;
-////                foreach(const MolLink &lk, links) {
-////                    lk_mol.insertMulti(lk.lk_nature, lk.mol);
-////                    lk_form.insertMulti(lk.lk_nature, lk.mol_form);
-////                }
-////                foreach(int key, lk_mol.uniqueKeys()) {
-////                    QStringList forms = lk_form.values(key);
-////                    const QList<int> &mols = lk_mol.values(key);
-////                    forms.removeDuplicates();
-////                    if (forms.count()==1 && mols.count()==2) {
-////                        // link molecules
-////                        QMultiHash<int, int> &code_lk = cis_codeMol_lk[i.key()];
-////                        code_lk.insertMulti(key, mols.at(0));
-////                        code_lk.insertMulti(key, mols.at(1));
-////                    }
-////                }
-////            }
-////        }
-////        // Computation
-////        int nb;
-////        do
-////        {
-////            nb=0;
-////            QMutableMapIterator<int, QMultiHash<int, int> > i (cis_codeMol_lk);
-////            while (i.hasNext()) {
-////                i.next();
-////                const QMultiHash<int, int> lk_codemol = i.value();
-////                // for all molecule_codes
-////                foreach(int lk, lk_codemol.uniqueKeys()) {
-////                    if (lk_codemol.count(lk) == 2) {
-////                        // Ok for computation
-////                        int one, two;
-////                        one = lk_codemol.values(lk).at(0);
-////                        two = lk_codemol.values(lk).at(1);
-
-////                        // if both molecule_codes are known or unknown --> continue
-////                        if ((!data->moleculeIdToAtcId.keys().contains(one)) &&
-////                                (!data->moleculeIdToAtcId.keys().contains(two)))
-////                            continue;
-////                        if ((data->moleculeIdToAtcId.keys().contains(one)) &&
-////                                (data->moleculeIdToAtcId.keys().contains(two)))
-////                            continue;
-
-////                        // Associate unknown molecule_code with the known ATC
-////                        if (data->moleculeIdToAtcId.keys().contains(one)) {
-////                            // The second molecule is unknown
-////                            const QList<int> &atcIds = data->moleculeIdToAtcId.values(one);
-////                            foreach(int actId, atcIds) {
-////                                data->moleculeIdToAtcId.insertMulti(two, actId);
-////                                qWarning() << "LK_NATURE: Linked" << i.key() << mols.key(one) << mols.key(two) << lk << atcName_id.key(actId);
-////                                data->unfoundMoleculeAssociations.removeAll(mols.key(two));
-////                                data->moleculeIdToAtcId_forModel.insertMulti(mols.key(one), atcName_id.key(actId));
-////                            }
-////                        } else if (data->moleculeIdToAtcId.keys().contains(two)) {
-////                            // The first is unknown
-////                            const QList<int> &atcIds = data->moleculeIdToAtcId.values(two);
-////                            foreach(int actId, atcIds) {
-////                                data->moleculeIdToAtcId.insertMulti(one, actId);
-////                                qWarning() << "LK_NATURE: Linked" << i.key() << mols.key(one) << mols.key(two) << lk << atcName_id.key(actId);
-////                                data->unfoundMoleculeAssociations.removeAll(mols.key(one));
-////                                data->moleculeIdToAtcId_forModel.insertMulti(mols.key(one), atcName_id.key(actId));
-////                            }
-////                        }
-////                        ++nb;
-////                        ++natureLinkerNb;
-////                    }
-////                }
-////            }
-////            LOG(QString("Link composition by nature: %1 total associations founded.").arg(nb));
-////        }
-////        while (nb > 0);
-////    }
-
     // Compute completion percent
     result->setCompletion((double)result->componentIdToAtcId().uniqueKeys().count() / (double)data.compoIds.count() * 100.0);
     LOG(QString("Molecule links completion: %1").arg(result->completionPercentage()));
@@ -938,7 +794,6 @@ ComponentLinkerResult &ComponentAtcModel::startComponentLinkage(const ComponentL
 
     QStringList v = unfoundComponents.values();
     qWarning() << v.join("  ;  ");
-
 
 //    qWarning()
 //            << "\nNUMBER OF MOLECULES" << knownComponentNames.count()
@@ -952,6 +807,16 @@ ComponentLinkerResult &ComponentAtcModel::startComponentLinkage(const ComponentL
 //            << "\n\n";
 
     return *result;
+}
+
+bool ComponentAtcModel::submitAll()
+{
+    if (!d->_sql->submitAll()) {
+        LOG_ERROR("Unable to submit model");
+        return false;
+    }
+    LOG("Model correctly saved");
+    return true;
 }
 
 int ComponentAtcModel::removeUnreviewedMolecules()

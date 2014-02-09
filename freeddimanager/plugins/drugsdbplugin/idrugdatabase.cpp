@@ -1372,6 +1372,7 @@ bool IDrugDatabase::linkDrugsComponentsAndDrugInteractors()
     // Create component linker data
     DDI::ComponentLinkerData data;
     data.setAtcLanguage(_lang);
+
     // Get all ATC-codes
     QHash<QString, int> ids;
     QSqlQuery query(_database->database());
@@ -1388,9 +1389,6 @@ bool IDrugDatabase::linkDrugsComponentsAndDrugInteractors()
     }
     data.setAtcCodeIds(ids);
     query.finish();
-
-    // TODO: data.setComponentCorrectionByAtcCode();
-    // TODO: data.setComponentCorrectionByName();
 
     // Get all components ids
     req = _database->select(Constants::Table_MOLS, QList<int>()

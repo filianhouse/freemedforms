@@ -77,24 +77,6 @@ public:
     void setAtcLanguage(const QString &_lang) {lang = _lang;}
 
     /**
-     * Define some hand made correction for Component using ATC \e label.
-     * Key is the component name, value is the ATC \e label to link with. \n
-     * All names and codes must be uppercase. \n
-     * This data must be defined before the DDI::ComponentModel will try to
-     * link drugs components to drug interactors / ATC codes.
-     */
-    void setComponentCorrectionByName(const QHash<QString, QString> &correction) {correctedByName = correction;}
-
-    /**
-     * Define some hand made correction for Component using ATC \e code.
-     * Key is the component name, value is the ATC \e code to link with.
-     * All names and codes must be uppercase. \n
-     * This data must be defined before the DDI::ComponentModel will try to
-     * link drugs components to drug interactors / ATC codes.
-     */
-    void setComponentCorrectionByAtcCode(const QMultiHash<QString, QString> &correction) {correctedByAtcCode = correction;}
-
-    /**
      * You must define the database identifiants for the \e drugs \e components. \n
      * Key is the \e name of the component, value its database Id. All names and
      * codes must be uppercase. \n
@@ -151,8 +133,6 @@ public:
 protected:
     // In data
     QString lang;
-    QHash<QString, QString> correctedByName;
-    QMultiHash<QString, QString> correctedByAtcCode;
     QHash<QString, int> compoIds;
     QHash<QString, int> atcCodeIds;
     QMultiHash<int, int> _equivalences;
