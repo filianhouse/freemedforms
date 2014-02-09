@@ -69,16 +69,6 @@
      </item>
     </layout>
    </item>
-   <item row="3" column="0">
-    <widget class="QTableView" name="tableView">
-     <property name="verticalScrollMode">
-      <enum>QAbstractItemView::ScrollPerPixel</enum>
-     </property>
-     <property name="horizontalScrollMode">
-      <enum>QAbstractItemView::ScrollPerPixel</enum>
-     </property>
-    </widget>
-   </item>
    <item row="1" column="0">
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
@@ -103,7 +93,17 @@
      </item>
     </layout>
    </item>
-   <item row="4" column="0">
+   <item row="2" column="0">
+    <widget class="QTableView" name="tableView">
+     <property name="verticalScrollMode">
+      <enum>QAbstractItemView::ScrollPerPixel</enum>
+     </property>
+     <property name="horizontalScrollMode">
+      <enum>QAbstractItemView::ScrollPerPixel</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
     <widget class="QTextBrowser" name="textBrowser">
      <property name="maximumSize">
       <size>
@@ -149,6 +149,17 @@
       </palette>
      </property>
     </widget>
+   </item>
+   <item row="4" column="0">
+    <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <item>
+      <widget class="QLabel" name="overview">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>

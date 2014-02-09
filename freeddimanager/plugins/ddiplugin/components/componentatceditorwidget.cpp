@@ -28,10 +28,8 @@
 #include "componentatcmodel.h"
 #include <ddiplugin/ddicore.h>
 #include <ddiplugin/atc/searchatcindatabasedialog.h>
-// #include "drugsdbcore.h"
 
-// #include <coreplugin/ftb_constants.h>
-
+#include <utils/log.h>
 #include <utils/global.h>
 #include <translationutils/constants.h>
 #include <translationutils/trans_drugs.h>
@@ -102,6 +100,7 @@ ComponentAtcEditorWidget::ComponentAtcEditorWidget(QWidget *parent) :
     d->proxyModel->setFilterKeyColumn(ComponentAtcModel::Name);
 
     d->ui->tableView->setModel(d->proxyModel);
+    d->ui->tableView->setSortingEnabled(true);
     d->ui->tableView->verticalHeader()->hide();
     d->ui->tableView->horizontalHeader()->setStretchLastSection(false);
     d->ui->tableView->horizontalHeader()->setResizeMode(ComponentAtcModel::FancyButton, QHeaderView::Fixed);
@@ -119,14 +118,19 @@ ComponentAtcEditorWidget::ComponentAtcEditorWidget(QWidget *parent) :
     d->ui->tableView->setColumnWidth(ComponentAtcModel::FancyButton, 24);
     d->ui->tableView->horizontalHeader()->hideSection(ComponentAtcModel::Id);
     d->ui->tableView->horizontalHeader()->hideSection(ComponentAtcModel::Uid);
+    d->ui->tableView->horizontalHeader()->hideSection(ComponentAtcModel::DrugDatabaseComponentUid1);
+    d->ui->tableView->horizontalHeader()->hideSection(ComponentAtcModel::DrugDatabaseComponentUid2);
 
     connect(d->ui->availableDrugsDb, SIGNAL(activated(int)), this, SLOT(onChangeComponentDrugDatabaseUidRequested(int)));
-    connect(d->ui->saveButton, SIGNAL(clicked()), d->model, SLOT(saveModel()));
+    connect(d->ui->saveButton, SIGNAL(clicked()), this, SLOT(saveModel()));
     connect(d->ui->reveiwers, SIGNAL(activated(QString)), d->model, SLOT(setActualReviewer(QString)));
     connect(d->ui->tableView, SIGNAL(activated(QModelIndex)), this, SLOT(onComponentViewItemActivated(QModelIndex)));
     connect(d->ui->tableView, SIGNAL(pressed(QModelIndex)), this, SLOT(onComponentViewItemPressed(QModelIndex)));
     connect(d->ui->removeUnreviewed, SIGNAL(clicked()), this, SLOT(onRemoveUnreviewedRequested()));
     connect(d->ui->searchMol, SIGNAL(textChanged(QString)), d->proxyModel, SLOT(setFilterWildcard(QString)));
+    connect(d->model, SIGNAL(modelReset()), this, SLOT(onModelReset()));
+
+    onModelReset();
 
 //        processCSVFile();
 }
@@ -148,6 +152,7 @@ void ComponentAtcEditorWidget::onChangeComponentDrugDatabaseUidRequested(const i
     if (!IN_RANGE_STRICT_MAX(index, 0, dbUids.count()))
         return;
     d->model->selectDatabase(dbUids.at(index));
+    onModelReset();
 }
 
 /** Reacts on index is clicked on the component tableview */
@@ -205,11 +210,26 @@ void ComponentAtcEditorWidget::onRemoveUnreviewedRequested()
     d->model = ddiCore()->componentAtcModel();
     int nb = d->model->removeUnreviewedMolecules();
     Utils::informativeMessageBox(tr("Removed %1 unreviewed item(s) from the model").arg(nb),"");
+    onModelReset();
 }
 
-struct StructMol {
-    QString name, atc, reference, comment;
-};
+void ComponentAtcEditorWidget::onModelReset()
+{
+    d->ui->overview->setText(d->model->overview());
+}
+
+
+void ComponentAtcEditorWidget::saveModel()
+{
+    d->model = ddiCore()->componentAtcModel();
+    if (!d->model->submitAll())
+        LOG_ERROR("Unable to submit model");
+    onModelReset();
+}
+
+//struct StructMol {
+//    QString name, atc, reference, comment;
+//};
 
 //void ComponentAtcEditorWidget::processCSVFile()
 //{
