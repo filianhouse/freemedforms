@@ -203,7 +203,7 @@ void ComponentAtcEditorWidget::onComponentViewItemActivated(const QModelIndex &i
     if (index.column() == ComponentAtcModel::Name) {
         SearchAtcInDatabaseDialog dlg(this, d->proxyModel->index(index.row(), ComponentAtcModel::Name).data().toString());
         if (dlg.exec() == QDialog::Accepted) {
-            d->proxyModel->setData(d->proxyModel->index(index.row(), ComponentAtcModel::AtcCodeList), dlg.getSelectedCodes().join(","));
+            d->proxyModel->setData(d->proxyModel->index(index.row(), ComponentAtcModel::AtcCodeList), dlg.getSelectedCodes().join(";"));
             d->proxyModel->setData(d->proxyModel->index(index.row(), ComponentAtcModel::IsReviewed), Qt::Checked, Qt::CheckStateRole);
         }
     }
