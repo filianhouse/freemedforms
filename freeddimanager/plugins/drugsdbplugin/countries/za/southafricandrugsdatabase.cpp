@@ -83,7 +83,7 @@ using namespace Trans::ConstantTranslations;
 // For your tests, you can limit the number of drugs computed and inserted into the database
 // using this debugging enum. Set to -1 if you want all drugs to be processed
 enum {
-    DontDownloadIndexes = true,         // Do not download html indexes files (you have to make sure that files were already downloaded)
+    DownloadIndexes = true,             // Do not download html indexes files (you have to make sure that files were already downloaded)
     LimitDrugProcessingTo = -1          // Set to -1 to process all available drugs
 };
 
@@ -181,12 +181,12 @@ bool ZaDrugDatabase::startDownload()
 
     // Create all indexes URL
     QList<QUrl> _urls;
-    if (DontDownloadIndexes) {
-        _multiDownloader->readXmlUrlFileLinks();
-    } else {
+    if (DownloadIndexes) {
         for(int i = 0; i < 26; ++i) {
             _urls << QUrl(QString(ZA_URL).arg(letters[i]));
         }
+    } else {
+        _multiDownloader->readXmlUrlFileLinks();
     }
 
     // Start url downloading
