@@ -109,6 +109,8 @@ ZaDrugDatabase::ZaDrugDatabase(QObject *parent) :
     DrugsDb::Internal::IDrugDatabase(parent)
 {
     setObjectName("ZaDrugDatabase");
+    setDatabaseUid("SAEPI_ZA");
+    setDatabaseLanguage("en");
     setTempPath(QString("%1/%2")
                 .arg(settings()->value(Core::Constants::S_TMP_PATH).toString())
                 .arg("/ZaRawSources/"));
@@ -385,7 +387,7 @@ public:
         }
         if (inns.isEmpty()) {
             LOG_FOR("ZADB", QString("No composition for %1").arg(name));
-            qWarning() << fullContent;
+            // qWarning() << fullContent;
         }
     }
 
@@ -731,6 +733,18 @@ bool ZaDrugDatabase::populateDatabase()
 
 //bool ZaDrugDatabase::linkMolecules()
 //{
+
+//    // 11 Jeb 2014
+//    //    NUMBER OF DRUGS         2619
+//    //    NUMBER OF MOLECULES     1145
+//    //    CORRECTED BY NAME       23
+//    //    CORRECTED BY ATC        0
+//    //    FOUNDED                 146
+//    //    LINKERMODEL (WithATC:122;WithoutATC:2) 124"
+//    //    LINKERNATURE            0
+//    //    LEFT                    584
+//    //    CONFIDENCE INDICE       12.7511
+
 //    WARN_FUNC;
 //    // 21 May 2013
 //    //    NUMBER OF MOLECULES 1145
