@@ -739,11 +739,11 @@ bool ZaDrugDatabase::populateDatabase()
 //    //    NUMBER OF MOLECULES     1145
 //    //    CORRECTED BY NAME       23
 //    //    CORRECTED BY ATC        0
-//    //    FOUNDED                 146
+//    //    FOUNDED                 663
 //    //    LINKERMODEL (WithATC:122;WithoutATC:2) 124"
 //    //    LINKERNATURE            0
-//    //    LEFT                    584
-//    //    CONFIDENCE INDICE       12.7511
+//    //    LEFT                    482
+//    //    CONFIDENCE INDICE       57.9039
 
 //    WARN_FUNC;
 //    // 21 May 2013
