@@ -26,15 +26,10 @@
  ***************************************************************************/
 #include "frenchdrugsdatabasecreator.h"
 #include "drug.h"
-//#include "moleculelinkermodel.h"
-//#include "drugsdbcore.h"
-//#include "idrugdatabasestepwidget.h"
-//#include "moleculelinkdata.h"
 
 #include <coreplugin/icore.h>
 #include <coreplugin/isettings.h>
 #include <coreplugin/fdm_constants.h>
-//#include <coreplugin/imainwindow.h>
 
 #include <drugsdbplugin/drugdatabasedescription.h>
 #include <drugsdbplugin/tools.h>
