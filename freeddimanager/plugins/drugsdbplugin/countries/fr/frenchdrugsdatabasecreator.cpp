@@ -298,17 +298,15 @@ bool FrDrugDatatabase::populateDatabase()
 //bool FrDrugDatatabase::linkMolecules()
 //{
     //    Feb 2014
-    //    Refactoring the code for the FreeDDIManager
+    //    Refactoring the code for the FreeDDIManager -> only use ComponentAtcModel
     //    ATC 5665
-    //    NUMBER OF MOLECULES 5618
+    //    NUMBER OF MOLECULES           5618
     //    HAND MADE ASSOCIATION 0       1
-    //    FOUNDED 2677 components
-    //    LINKERMODEL 901               1112
-    //    LINKERNATURE
+    //    LINKERMODEL 901               2214
 
     //    (sans les molécules homéopathiques)
-    //    LEFT 1707                     1651
-    //    CONFIDENCE INDICE 70.6123     70.6123
+    //    LEFT 1707                     2186
+    //    CONFIDENCE INDICE 70.6123     61.0894
 
 //    // 21 May 2013
 //    //    NUMBER OF MOLECULES 5492

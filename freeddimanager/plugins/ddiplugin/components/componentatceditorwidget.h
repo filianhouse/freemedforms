@@ -53,6 +53,7 @@ public:
 protected Q_SLOTS:
     void onChangeComponentDrugDatabaseUidRequested(const int index);
     void onComponentViewItemActivated(const QModelIndex &index);
+    void onComponentViewItemChanged(const QModelIndex &current, const QModelIndex &previous);
     void onComponentViewItemPressed(const QModelIndex &index);
     void onRemoveUnreviewedRequested();
     void onModelReset();

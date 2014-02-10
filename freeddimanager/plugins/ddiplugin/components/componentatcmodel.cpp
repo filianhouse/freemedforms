@@ -254,7 +254,7 @@ public:
                 query.bindValue(Constants::COMPO_REVIEWERS, QVariant());
                 query.bindValue(Constants::COMPO_COMMENT, QVariant());
 
-                qWarning() << "inserted" << lbl << alreadySuggested.join(";");
+                // qWarning() << "inserted" << lbl << alreadySuggested.join(";");
 
                 if (!query.exec()) {
                     LOG_QUERY_ERROR_FOR(q, query);
@@ -302,7 +302,7 @@ public:
             query.bindValue(0, alreadySuggested.join(";"));
             query.bindValue(1, QDate::currentDate().toString(Qt::ISODate));
 
-            qWarning() << "updated" << lbl << alreadySuggested.join(";");
+            // qWarning() << "updated" << lbl << alreadySuggested.join(";");
 
             if (!query.exec()) {
                 LOG_QUERY_ERROR_FOR(q, query);
@@ -473,6 +473,9 @@ bool ComponentAtcModel::setData(const QModelIndex &index, const QVariant &value,
         bool ok = false;
         QModelIndex sqlIndex = d->_sql->index(index.row(), sql);
 
+        if (sqlIndex.data() == value)
+            return true;
+
         switch (index.column()) {
         case IsValid:
         case IsReviewed:
@@ -485,15 +488,50 @@ bool ComponentAtcModel::setData(const QModelIndex &index, const QVariant &value,
         if (ok) {
             Q_EMIT dataChanged(index, index);
             sqlIndex = d->_sql->index(index.row(), Constants::COMPO_DATEUPDATE);
-            ok = d->_sql->setData(sqlIndex, QDateTime::currentDateTime(), role);
+            ok = d->_sql->setData(sqlIndex, QDateTime::currentDateTime().toString(Qt::ISODate), role);
             if (ok) {
                 QModelIndex idx = this->index(index.row(), DateUpdate);
                 Q_EMIT dataChanged(idx, idx);
             }
         }
+        return ok;
+    } else if (role == Qt::CheckStateRole) {
+        bool ok = false;
+        QModelIndex sqlIndex = d->_sql->index(index.row(), sql);
 
+        switch (index.column()) {
+        case IsValid:
+        case IsReviewed:
+            ok = d->_sql->setData(sqlIndex, value.toInt()==Qt::Checked?1:0, Qt::EditRole);
+            break;
+        default: break;
+        }
+
+        //        // If is reviewed == Qt::Checked & no ATC & +suggested -> Set ATC with suggested
+        //        if (index.column() == IsReviewed && value.toInt() == Qt::Checked) {
+        //            QModelIndex atcIndex = d->_sql->index(index.row(), Constants::COMPO_ATCCODES);
+        //            QString atc = d->_sql->data(atcIndex).toString().simplified();
+        //            if (atc.isEmpty()) {
+        //                QString sugg = d->_sql->data(d->_sql->index(index.row(), Constants::COMPO_SUGGESTED)).toString().simplified();
+        //                d->_sql->setData(atcIndex, sugg);
+        //                QModelIndex idx = this->index(index.row(), AtcCodeList);
+        //                Q_EMIT dataChanged(idx, idx);
+        //            }
+        //        }
+
+        // set the date update
+        if (ok) {
+            Q_EMIT dataChanged(index, index);
+            sqlIndex = d->_sql->index(index.row(), Constants::COMPO_DATEUPDATE);
+            ok = d->_sql->setData(sqlIndex, QDateTime::currentDateTime().toString(Qt::ISODate), role);
+            if (ok) {
+                QModelIndex idx = this->index(index.row(), DateUpdate);
+                Q_EMIT dataChanged(idx, idx);
+            }
+        }
         return ok;
     }
+
     return false;
 }
 
@@ -504,6 +542,10 @@ Qt::ItemFlags ComponentAtcModel::flags(const QModelIndex &index) const
 
     Qt::ItemFlags f = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
     switch (index.column()) {
+    case Id:
+    case Uid:
+    case DrugDatabaseComponentUid1:
+    case DrugDatabaseComponentUid2:
     case Name:
     case DateUpdate:
     case DateCreation:
@@ -681,12 +723,20 @@ ComponentLinkerResult &ComponentAtcModel::startComponentLinkage(const ComponentL
 
     // TODO: During this process, we should manage component equivalence (in comment? add links?)
     // First pass: For all components, try to find exact match component label <-> atc label
+
+
+//    // Draft code: Automatically save ATC link to DB with isReviewed state
+//    query.finish();
+//    QStringList alreadySuggested;
+//    where.remove(Constants::COMPO_ISVALID);
+//    where.remove(Constants::COMPO_ISREVIEWED);
+//    // End draft
+
     foreach(const QString &componentLbl, knownComponentNames) {
         if (componentLbl.isEmpty())
             continue;
         if (compoLblToAtcSuggested.contains(componentLbl))
             continue;
-
         // Always remove accents for ATC autochecking (ATC labels are retrieved without accents)
         // Does component name exact-matches an ATC label
         QString transformedLbl = Utils::removeAccents(componentLbl);
@@ -695,8 +745,62 @@ ComponentLinkerResult &ComponentAtcModel::startComponentLinkage(const ComponentL
         // Now check if we find something
         if (!atcCodes.isEmpty()) {
             compoLblToAtcSuggested.insert(componentLbl, atcCodes.join(";"));
+
+//            // Draft code: Automatically save ATC link to DB with isReviewed state
+//            alreadySuggested.clear();
+//            QString sqlLbl = componentLbl.toUpper();
+//            sqlLbl = sqlLbl.replace("''", "'");
+//            sqlLbl = sqlLbl.replace("'", "''");
+//            where.insert(Constants::COMPO_LABEL, QString("='%1'").arg(sqlLbl));
+
+//            // Get the suggested ATC code list for the component
+//            QString req = ddiBase().select(Constants::Table_COMPONENTS, Constants::COMPO_SUGGESTED, where);
+//            if (query.exec(req)) {
+//                if (query.next())
+//                    alreadySuggested = query.value(0).toString().split(";", QString::SkipEmptyParts);
+//            } else {
+//                LOG_QUERY_ERROR(query);
+//                query.finish();
+//                db.rollback();
+//                return *result;
+//            }
+//            query.finish();
+
+//            // Add new ATC, remove duples and save to database
+//            alreadySuggested << atcCodes;
+//            alreadySuggested.removeDuplicates();
+//            // Remove all Z* codes
+//            for(int i = alreadySuggested.count()-1; i > 0; --i) {
+//                if (alreadySuggested.at(i).startsWith("Z"))
+//                    alreadySuggested.removeAt(i);
+//            }
+
+//            // Update the line
+//            req = ddiBase().prepareUpdateQuery(Constants::Table_COMPONENTS, QList<int>()
+//                                               << Constants::COMPO_ISREVIEWED
+//                                               << Constants::COMPO_ATCCODES
+//                                               << Constants::COMPO_SUGGESTED
+//                                               << Constants::COMPO_DATEUPDATE, where);
+//            query.prepare(req);
+//            query.bindValue(0, 1);
+//            query.bindValue(1, alreadySuggested.join(";"));
+//            query.bindValue(2, alreadySuggested.join(";"));
+//            query.bindValue(3, QDate::currentDate().toString(Qt::ISODate));
+
+//            qWarning() << "updated" << sqlLbl << alreadySuggested.join(";");
+
+//            if (!query.exec()) {
+//                LOG_QUERY_ERROR(query);
+//                query.finish();
+//                db.rollback();
+//                return *result;
+//            }
+//            query.finish();
+//            // End draft
         }
     }
+    db.commit();
+    //    return *result;
 
     // Second pass: find non-exact match component label (without prefix) <-> atc label
     foreach(const QString &componentLbl, knownComponentNames) {
@@ -793,7 +897,7 @@ ComponentLinkerResult &ComponentAtcModel::startComponentLinkage(const ComponentL
     qWarning() << "UNFOUND " << unfoundComponents.keys().count();
 
     QStringList v = unfoundComponents.values();
-    qWarning() << v.join("  ;  ");
+    // qWarning() << v.join("  ;  ");
 
 //    qWarning()
 //            << "\nNUMBER OF MOLECULES" << knownComponentNames.count()

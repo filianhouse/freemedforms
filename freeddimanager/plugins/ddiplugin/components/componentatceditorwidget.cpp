@@ -116,7 +116,7 @@ ComponentAtcEditorWidget::ComponentAtcEditorWidget(QWidget *parent) :
     d->ui->tableView->horizontalHeader()->setResizeMode(ComponentAtcModel::Reviewer, QHeaderView::Interactive);
     d->ui->tableView->horizontalHeader()->setResizeMode(ComponentAtcModel::Comments, QHeaderView::Interactive);
     d->ui->tableView->setColumnWidth(ComponentAtcModel::FancyButton, 24);
-    d->ui->tableView->horizontalHeader()->hideSection(ComponentAtcModel::Id);
+//    d->ui->tableView->horizontalHeader()->hideSection(ComponentAtcModel::Id);
     d->ui->tableView->horizontalHeader()->hideSection(ComponentAtcModel::Uid);
     d->ui->tableView->horizontalHeader()->hideSection(ComponentAtcModel::DrugDatabaseComponentUid1);
     d->ui->tableView->horizontalHeader()->hideSection(ComponentAtcModel::DrugDatabaseComponentUid2);
@@ -126,6 +126,7 @@ ComponentAtcEditorWidget::ComponentAtcEditorWidget(QWidget *parent) :
     connect(d->ui->reveiwers, SIGNAL(activated(QString)), d->model, SLOT(setActualReviewer(QString)));
     connect(d->ui->tableView, SIGNAL(activated(QModelIndex)), this, SLOT(onComponentViewItemActivated(QModelIndex)));
     connect(d->ui->tableView, SIGNAL(pressed(QModelIndex)), this, SLOT(onComponentViewItemPressed(QModelIndex)));
+    connect(d->ui->tableView->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)), this, SLOT(onComponentViewItemChanged(QModelIndex,QModelIndex)));
     connect(d->ui->removeUnreviewed, SIGNAL(clicked()), this, SLOT(onRemoveUnreviewedRequested()));
     connect(d->ui->searchMol, SIGNAL(textChanged(QString)), d->proxyModel, SLOT(setFilterWildcard(QString)));
     connect(d->model, SIGNAL(modelReset()), this, SLOT(onModelReset()));
@@ -155,6 +156,11 @@ void ComponentAtcEditorWidget::onChangeComponentDrugDatabaseUidRequested(const i
     onModelReset();
 }
 
+void ComponentAtcEditorWidget::onComponentViewItemChanged(const QModelIndex &current, const QModelIndex &previous)
+{
+    d->ui->textBrowser->setHtml(current.data(Qt::ToolTipRole).toString());
+}
+
 /** Reacts on index is clicked on the component tableview */
 void ComponentAtcEditorWidget::onComponentViewItemPressed(const QModelIndex &index)
 {
@@ -174,7 +180,7 @@ void ComponentAtcEditorWidget::onComponentViewItemPressed(const QModelIndex &ind
         if (selected == atcSearchDialog) {
             SearchAtcInDatabaseDialog dlg(this, d->proxyModel->index(index.row(), ComponentAtcModel::Name).data().toString());
             if (dlg.exec() == QDialog::Accepted) {
-                d->proxyModel->setData(d->proxyModel->index(index.row(), ComponentAtcModel::AtcCodeList), dlg.getSelectedCodes().join(","));
+                d->proxyModel->setData(d->proxyModel->index(index.row(), ComponentAtcModel::AtcCodeList), dlg.getSelectedCodes().join(";"));
                 d->proxyModel->setData(d->proxyModel->index(index.row(), ComponentAtcModel::IsReviewed), 1);
             }
         } else if (selected == google) {
@@ -187,8 +193,6 @@ void ComponentAtcEditorWidget::onComponentViewItemPressed(const QModelIndex &ind
         } else if (selected == copyClip) {
             QApplication::clipboard()->setText(d->proxyModel->index(index.row(), ComponentAtcModel::Name).data().toString());
         }
-    } else {
-        d->ui->textBrowser->setHtml(index.data(Qt::ToolTipRole).toString());
     }
 }
 
