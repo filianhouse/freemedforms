@@ -60,6 +60,8 @@ private Q_SLOTS:
     void downloadFinished();
     void changeStepProgressRange(int min, int max);
     void onCurrentDrugsDatabaseChanged(const QItemSelection &current, const QItemSelection &previous);
+    void onSeeDatabaseDescriptionFileRequested();
+    void onSeeDatapackDescriptionFileRequested();
 
 //private:
 //    void showEvent(QShowEvent *event);

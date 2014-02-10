@@ -32,8 +32,6 @@
 
 #include "drugsdbmodewidget.h"
 #include "idrugdatabase.h"
-//#include <drugsdb/ddi/drugdruginteractioncore.h>
-//#include <drugsdb/drugsdbcore.h>
 
 #include <coreplugin/icore.h>
 #include <coreplugin/imainwindow.h>
@@ -46,6 +44,8 @@
 #include <QPointer>
 #include <QVector>
 #include <QDir>
+#include <QDesktopServices>
+#include <QUrl>
 
 #include <QDebug>
 
@@ -79,6 +79,7 @@ public:
 
     void updateAvailableDatabase()
     {
+        // Update available database listWidget
         QObject::disconnect(ui->availableListWidget->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), q, SLOT(onCurrentDrugsDatabaseChanged(QItemSelection,QItemSelection)));
         ui->availableListWidget->clear();
         foreach(IDrugDatabase *db, _databases) {
@@ -130,6 +131,9 @@ DrugsDbModeWidget::DrugsDbModeWidget(QWidget *parent) :
 
     d->ui->downloadSPC->hide();
     // TODO: connect(d->ui->downloadSPC, SIGNAL(clicked()), this, SLOT(downloadFinished()));
+
+    connect(d->ui->seeDbDescription, SIGNAL(clicked()), this, SLOT(onSeeDatabaseDescriptionFileRequested()));
+    connect(d->ui->seeDatapackDescription, SIGNAL(clicked()), this, SLOT(onSeeDatapackDescriptionFileRequested()));
 
     onCurrentDrugsDatabaseChanged(QItemSelection(), QItemSelection());
 }
@@ -260,14 +264,39 @@ void DrugsDbModeWidget::changeStepProgressRange(int min, int max)
 /** When user select a new current database, update the information */
 void DrugsDbModeWidget::onCurrentDrugsDatabaseChanged(const QItemSelection &current, const QItemSelection &previous)
 {
+    Q_UNUSED(current);
+    Q_UNUSED(previous);
     d->setUiEnabled(false);
     IDrugDatabase *base = d->currentDatabase();
     if (!base)
         return;
     d->setUiEnabled(true);
+
+    // Update UI labels and texts
     d->ui->output->setText(base->outputPath() + QDir::separator() + base->outputFileName());
-    d->ui->descriptionFile->setText(base->databaseDescriptionFile());
     d->ui->title->setText(base->displayName());
+
+    // Add tooltips to buttons
+    d->ui->seeDbDescription->setToolTip(base->databaseDescriptionFile());
+    d->ui->seeDatapackDescription->setToolTip(base->datapackDescriptionFile());
+}
+
+void DrugsDbModeWidget::onSeeDatabaseDescriptionFileRequested()
+{
+    IDrugDatabase *base = d->currentDatabase();
+    if (!base)
+        return;
+    // TODO: open file in a TextEditor that allow save & edit
+    QDesktopServices::openUrl(QUrl(base->databaseDescriptionFile()));
+}
+
+void DrugsDbModeWidget::onSeeDatapackDescriptionFileRequested()
+{
+    IDrugDatabase *base = d->currentDatabase();
+    if (!base)
+        return;
+    // TODO: open file in a TextEditor that allow save & edit
+    QDesktopServices::openUrl(QUrl(base->datapackDescriptionFile()));
 }
 
 //void DrugsDbModeWidget::showEvent(QShowEvent *event)
