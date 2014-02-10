@@ -27,6 +27,7 @@
 #include "imode/drugsdbmode.h"
 #include "idrugdatabase.h"
 #include <drugsdbplugin/countries/fr/frenchdrugsdatabasecreator.h>
+#include <drugsdbplugin/countries/za/southafricandrugsdatabase.h>
 
 #include <coreplugin/icore.h>
 //#include <coreplugin/isettings.h>
@@ -86,6 +87,10 @@ bool DrugsDbPlugin::initialize(const QStringList &arguments, QString *errorMessa
     // Create the database creator
     IDrugDatabase *base = 0;
     base = new FrDrugDatatabase(this);
+    _mode->registerDrugDatabase(base);
+    _databases.append(base);
+
+    base = new ZaDrugDatabase(this);
     _mode->registerDrugDatabase(base);
     _databases.append(base);
 
