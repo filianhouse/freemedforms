@@ -31,26 +31,24 @@
 #include <QStringList>
 
 /**
- * \file frenchdrugsdatabasecreator.h
+ * \file frenchdrugsdatabase.h
  * \author Eric Maeker
  * \version 0.10.0
- * \date 11 Jan 2014
+ * \date 11 Feb 2014
 */
 
 namespace DrugsDb {
 namespace Internal {
-class FdaDrugDatatabaseStep;
 
-class FdaDrugDatatabaseStep : public DrugsDb::Internal::IDrugDatabase
+class FdaDrugDatatabase : public DrugsDb::Internal::IDrugDatabase
 {
     Q_OBJECT
 
 public:
-    FdaDrugDatatabaseStep(QObject *parent = 0);
-    ~FdaDrugDatatabaseStep();
+    FdaDrugDatatabase(QObject *parent = 0);
+    ~FdaDrugDatatabase();
 
-    QString id() const {return "FdaDrugDatatabaseStep";}
-    Steps stepNumber() const {return Core::IFullReleaseStep::DrugsDatabase;}
+    QString id() const {return "FdaDrugDatatabase";}
     void setLicenseType(LicenseType type);
 
     bool process();
@@ -58,14 +56,13 @@ public:
 
     bool prepareData();
     bool populateDatabase();
-    bool linkMolecules();
+    // bool linkMolecules();
 
     QStringList errors() const {return m_Errors;}
 
 private:
     QStringList m_Errors;
     bool m_WithProgress;
-
 };
 
 }  // namespace Internal

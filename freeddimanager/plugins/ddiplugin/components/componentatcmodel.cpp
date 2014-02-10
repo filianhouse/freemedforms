@@ -507,17 +507,17 @@ bool ComponentAtcModel::setData(const QModelIndex &index, const QVariant &value,
         default: break;
         }
 
-        //        // If is reviewed == Qt::Checked & no ATC & +suggested -> Set ATC with suggested
-        //        if (index.column() == IsReviewed && value.toInt() == Qt::Checked) {
-        //            QModelIndex atcIndex = d->_sql->index(index.row(), Constants::COMPO_ATCCODES);
-        //            QString atc = d->_sql->data(atcIndex).toString().simplified();
-        //            if (atc.isEmpty()) {
-        //                QString sugg = d->_sql->data(d->_sql->index(index.row(), Constants::COMPO_SUGGESTED)).toString().simplified();
-        //                d->_sql->setData(atcIndex, sugg);
-        //                QModelIndex idx = this->index(index.row(), AtcCodeList);
-        //                Q_EMIT dataChanged(idx, idx);
-        //            }
-        //        }
+                // If is reviewed == Qt::Checked & no ATC & +suggested -> Set ATC with suggested
+                if (index.column() == IsReviewed && value.toInt() == Qt::Checked) {
+                    QModelIndex atcIndex = d->_sql->index(index.row(), Constants::COMPO_ATCCODES);
+                    QString atc = d->_sql->data(atcIndex).toString().simplified();
+                    if (atc.isEmpty()) {
+                        QString sugg = d->_sql->data(d->_sql->index(index.row(), Constants::COMPO_SUGGESTED)).toString().simplified();
+                        d->_sql->setData(atcIndex, sugg);
+                        QModelIndex idx = this->index(index.row(), AtcCodeList);
+                        Q_EMIT dataChanged(idx, idx);
+                    }
+                }
 
         // set the date update
         if (ok) {

@@ -24,12 +24,8 @@
  *       NAME <MAIL@ADDRESS.COM>                                           *
  *       NAME <MAIL@ADDRESS.COM>                                           *
  ***************************************************************************/
-#include "fdadrugsdatabasecreator.h"
-//#include "moleculelinkermodel.h"
-//#include "drug.h"
-//#include "drugsdbcore.h"
-//#include "idrugdatabasestepwidget.h"
-//#include "moleculelinkdata.h"
+#include "fdadrugsdatabase.h"
+#include <drugsdbplugin/drug.h>
 
 #include <coreplugin/icore.h>
 #include <coreplugin/imainwindow.h>
@@ -85,18 +81,18 @@ const char* const  FDA_DRUGS_DATABASE_NAME     = "FDA_US";
 
 static inline Core::ISettings *settings()  { return Core::ICore::instance()->settings(); }
 static inline ExtensionSystem::PluginManager *pluginManager() {return ExtensionSystem::PluginManager::instance();}
-static inline DrugsDB::DrugsDBCore *drugsDbCore() {return DrugsDB::DrugsDBCore::instance();}
 
-FdaDrugDatatabaseStep::FdaDrugDatatabaseStep(QObject *parent) :
-    IDrugDatabaseStep(parent),
+FdaDrugDatatabase::FdaDrugDatatabase(QObject *parent) :
+    IDrugDatabase(parent),
     m_WithProgress(false)
 {
-    setObjectName("FdaDrugDatatabaseStep");
+    setObjectName("FdaDrugDatatabase");
+    setDatabaseUid("FDA_US");
+    setDatabaseLanguage("en");
     setTempPath(QString("%1/%2")
                 .arg(settings()->value(Core::Constants::S_TMP_PATH).toString())
                 .arg("FdaRawSources"));
     setConnectionName("fda_free");
-    setOutputPath(Tools::databaseOutputPath() + "/drugs/");
     setDatabaseDescriptionFile(QString("%1/%2/%3")
                                .arg(settings()->value(Core::Constants::S_GITFILES_PATH).toString())
                                .arg(Core::Constants::PATH_TO_DRUG_DATABASE_DESCRIPTION_FILES)
@@ -110,13 +106,13 @@ FdaDrugDatatabaseStep::FdaDrugDatatabaseStep(QObject *parent) :
     createTemporaryStorage();
 }
 
-FdaDrugDatatabaseStep::~FdaDrugDatatabaseStep()
+FdaDrugDatatabase::~FdaDrugDatatabase()
 {
 }
 
-void FdaDrugDatatabaseStep::setLicenseType(LicenseType type)
+void FdaDrugDatatabase::setLicenseType(LicenseType type)
 {
-    IDrugDatabaseStep::setLicenseType(type);
+    IDrugDatabase::setLicenseType(type);
     if (type==NonFree) {
         setDisplayName(tr("Non-free FDA drugs database"));
         setConnectionName("fda_nonfree");
@@ -134,22 +130,27 @@ void FdaDrugDatatabaseStep::setLicenseType(LicenseType type)
                                    .arg(Core::Constants::PATH_TO_DATAPACK_DESCRIPTION_FILES)
                                    .arg("drugs/fda_noddi/packdescription.xml"));
     }
+    setOutputPath(QString("%1/%2/%3")
+                  .arg(settings()->value(Core::Constants::S_DBOUTPUT_PATH).toString())
+                  .arg("/drugs/")
+                  .arg(connectionName())
+                  );
 }
 
-QString FdaDrugDatatabaseStep::processMessage() const
+QString FdaDrugDatatabase::processMessage() const
 {
     if (licenseType() == NonFree)
         return tr("Non-free FDA drugs database creation");
     return tr("Free FDA drugs database creation");
 }
 
-bool FdaDrugDatatabaseStep::process()
+bool FdaDrugDatatabase::process()
 {
     unzipFiles();
     prepareData();
     createDatabase();
     populateDatabase();
-    linkMolecules();
+    // linkMolecules();
     Q_EMIT processFinished();
     return true;
 }
@@ -273,12 +274,12 @@ public:
     QHash<QString, QString> mols_strength;
 };
 
-bool FdaDrugDatatabaseStep::prepareData()
+bool FdaDrugDatatabase::prepareData()
 {
     return true;
 }
 
-bool FdaDrugDatatabaseStep::populateDatabase()
+bool FdaDrugDatatabase::populateDatabase()
 {
     if (!checkDatabase())
         return false;
@@ -374,109 +375,109 @@ bool FdaDrugDatatabaseStep::populateDatabase()
     return true;
 }
 
-bool FdaDrugDatatabaseStep::linkMolecules()
-{
-    // 17 Feb 2012
-    //    NUMBER OF MOLECULES 2033
-    //    CORRECTED BY NAME 11
-    //    CORRECTED BY ATC 0
-    //    FOUNDED 1574 "
-    //    LINKERMODEL (WithATC:250;WithoutATC:1) 251"
-    //    LINKERNATURE 0
-    //    LEFT 458
-    //    CONFIDENCE INDICE 77
+//bool FdaDrugDatatabase::linkMolecules()
+//{
+//    // 17 Feb 2012
+//    //    NUMBER OF MOLECULES 2033
+//    //    CORRECTED BY NAME 11
+//    //    CORRECTED BY ATC 0
+//    //    FOUNDED 1574 "
+//    //    LINKERMODEL (WithATC:250;WithoutATC:1) 251"
+//    //    LINKERNATURE 0
+//    //    LEFT 458
+//    //    CONFIDENCE INDICE 77
 
-    // 28 Sept 2011 (using EN translations of ATC labels + new ATC 2011 && 2012)
-    //    NUMBER OF MOLECULES 2014
-    //    CORRECTED BY NAME 11
-    //    CORRECTED BY ATC 0
-    //    FOUNDED 1558 "
-    //    LINKERMODEL (WithATC:261;WithoutATC:1) 262"
-    //    LINKERNATURE 0
-    //    LEFT 455
-    //    CONFIDENCE INDICE 77
+//    // 28 Sept 2011 (using EN translations of ATC labels + new ATC 2011 && 2012)
+//    //    NUMBER OF MOLECULES 2014
+//    //    CORRECTED BY NAME 11
+//    //    CORRECTED BY ATC 0
+//    //    FOUNDED 1558 "
+//    //    LINKERMODEL (WithATC:261;WithoutATC:1) 262"
+//    //    LINKERNATURE 0
+//    //    LEFT 455
+//    //    CONFIDENCE INDICE 77
 
-    // 28 APR 2011
-    //    NUMBER OF MOLECULES 2000
-    //    CORRECTED BY NAME 11
-    //    CORRECTED BY ATC 0
-    //    FOUNDED 1207 "
-    //    LINKERMODEL (WithATC:259;WithoutATC:1) 260"
-    //    LINKERNATURE 0
-    //    LEFT 792
-    //    CONFIDENCE INDICE 60
+//    // 28 APR 2011
+//    //    NUMBER OF MOLECULES 2000
+//    //    CORRECTED BY NAME 11
+//    //    CORRECTED BY ATC 0
+//    //    FOUNDED 1207 "
+//    //    LINKERMODEL (WithATC:259;WithoutATC:1) 260"
+//    //    LINKERNATURE 0
+//    //    LEFT 792
+//    //    CONFIDENCE INDICE 60
 
-    // 04 Dec 2010
-    //    NUMBER OF MOLECULES 1983
-    //    CORRECTED BY NAME 11
-    //    CORRECTED BY ATC 0
-    //    FOUNDED 1343
-    //    LINKERMODEL 6
-    //    LINKERNATURE 0
-    //    LEFT 640
+//    // 04 Dec 2010
+//    //    NUMBER OF MOLECULES 1983
+//    //    CORRECTED BY NAME 11
+//    //    CORRECTED BY ATC 0
+//    //    FOUNDED 1343
+//    //    LINKERMODEL 6
+//    //    LINKERNATURE 0
+//    //    LEFT 640
 
-    // 13 Nov 2010
-    //    NUMBER OF MOLECULES 1983
-    //    CORRECTED BY NAME 11
-    //    CORRECTED BY ATC 0
-    //    FOUNDED 1337
-    //    LINKERMODEL 0
-    //    LINKERNATURE 0
-    //    LEFT 646
-
-
-    // 28 July 2010
-    // 1960 distinct mols
-    // Hand association : 20
-    // Found : 1349, Left: 612
+//    // 13 Nov 2010
+//    //    NUMBER OF MOLECULES 1983
+//    //    CORRECTED BY NAME 11
+//    //    CORRECTED BY ATC 0
+//    //    FOUNDED 1337
+//    //    LINKERMODEL 0
+//    //    LINKERNATURE 0
+//    //    LEFT 646
 
 
-    if (licenseType() == Free)
-        return true;
+//    // 28 July 2010
+//    // 1960 distinct mols
+//    // Hand association : 20
+//    // Found : 1349, Left: 612
 
-    // Connect to databases
-    if (!checkDatabase())
-        return false;
 
-    Q_EMIT progressLabelChanged(tr("Linking drugs components to ATC codes"));
-    Q_EMIT progressRangeChanged(0, 2);
-    Q_EMIT progress(0);
+//    if (licenseType() == Free)
+//        return true;
 
-    // Associate Mol <-> ATC for drugs with one molecule only
-    MoleculeLinkerModel *model = drugsDbCore()->moleculeLinkerModel();
-    MoleculeLinkData data(drugEssentialDatabase(), sourceId(), ::FDA_DRUGS_DATABASE_NAME, "fr");
-    // Associate Mol <-> ATC for drugs with one molecule only
-    data.correctedByName.insert("IOTHALAMATE", "SODIUM IOTHALAMATE (125I)");
-    data.correctedByName.insert("IOTHALAMATE SODIUM I-125" , "SODIUM IOTHALAMATE (125I)");
-    data.correctedByName.insert("POLYMYXIN" ,"POLYMYXIN B" );
-    data.correctedByName.insert("POLYMYXIN B SULFATE" ,"POLYMYXIN B" );
-    data.correctedByName.insert("THIAMINE", "THIAMINE (VIT B1)");
-    data.correctedByName.insert("GRISEOFULVIN, ULTRAMICROCRYSTALLINE" ,"GRISEOFULVIN");
-    data.correctedByName.insert("GONADOTROPIN, CHORIONIC" ,"CHORIONIC GONADOTROPIN" );
-    data.correctedByName.insert("TYROPANOATE SODIUM" ,"TYROPANOIC ACID" );
-    data.correctedByName.insert("SODIUM NITROPRUSSIDE","NITROPRUSSIDE");
-    data.correctedByName.insert("IOXAGLATE SODIUM" ,"IOXAGLIC ACID");
-    data.correctedByName.insert("IOXAGLATE MEGLUMINE", "IOXAGLIC ACID");
-    if (!model->moleculeLinker(&data))
-        return false;
+//    // Connect to databases
+//    if (!checkDatabase())
+//        return false;
 
-    Q_EMIT progress(1);
+//    Q_EMIT progressLabelChanged(tr("Linking drugs components to ATC codes"));
+//    Q_EMIT progressRangeChanged(0, 2);
+//    Q_EMIT progress(0);
 
-    Q_EMIT progressLabelChanged(tr("Saving components to ATC links to database"));
-    Q_EMIT progressRangeChanged(0, 1);
-    Q_EMIT progress(0);
+//    // Associate Mol <-> ATC for drugs with one molecule only
+//    MoleculeLinkerModel *model = drugsDbCore()->moleculeLinkerModel();
+//    MoleculeLinkData data(drugEssentialDatabase(), sourceId(), ::FDA_DRUGS_DATABASE_NAME, "fr");
+//    // Associate Mol <-> ATC for drugs with one molecule only
+//    data.correctedByName.insert("IOTHALAMATE", "SODIUM IOTHALAMATE (125I)");
+//    data.correctedByName.insert("IOTHALAMATE SODIUM I-125" , "SODIUM IOTHALAMATE (125I)");
+//    data.correctedByName.insert("POLYMYXIN" ,"POLYMYXIN B" );
+//    data.correctedByName.insert("POLYMYXIN B SULFATE" ,"POLYMYXIN B" );
+//    data.correctedByName.insert("THIAMINE", "THIAMINE (VIT B1)");
+//    data.correctedByName.insert("GRISEOFULVIN, ULTRAMICROCRYSTALLINE" ,"GRISEOFULVIN");
+//    data.correctedByName.insert("GONADOTROPIN, CHORIONIC" ,"CHORIONIC GONADOTROPIN" );
+//    data.correctedByName.insert("TYROPANOATE SODIUM" ,"TYROPANOIC ACID" );
+//    data.correctedByName.insert("SODIUM NITROPRUSSIDE","NITROPRUSSIDE");
+//    data.correctedByName.insert("IOXAGLATE SODIUM" ,"IOXAGLIC ACID");
+//    data.correctedByName.insert("IOXAGLATE MEGLUMINE", "IOXAGLIC ACID");
+//    if (!model->moleculeLinker(&data))
+//        return false;
 
-    // Save to links to drugs database
-    Tools::addComponentAtcLinks(drugEssentialDatabase(), data.moleculeIdToAtcId, sourceId());
+//    Q_EMIT progress(1);
 
-    LOG(QString("Database processed"));
+//    Q_EMIT progressLabelChanged(tr("Saving components to ATC links to database"));
+//    Q_EMIT progressRangeChanged(0, 1);
+//    Q_EMIT progress(0);
 
-    // add unfound to extralinkermodel
-    Q_EMIT progressLabelChanged(tr("Updating component link XML file"));
-    model->addUnreviewedMolecules(::FDA_DRUGS_DATABASE_NAME, data.unfoundMoleculeAssociations);
-    model->saveModel();
-    Q_EMIT progress(1);
+//    // Save to links to drugs database
+//    Tools::addComponentAtcLinks(drugEssentialDatabase(), data.moleculeIdToAtcId, sourceId());
 
-    return true;
-}
+//    LOG(QString("Database processed"));
+
+//    // add unfound to extralinkermodel
+//    Q_EMIT progressLabelChanged(tr("Updating component link XML file"));
+//    model->addUnreviewedMolecules(::FDA_DRUGS_DATABASE_NAME, data.unfoundMoleculeAssociations);
+//    model->saveModel();
+//    Q_EMIT progress(1);
+
+//    return true;
+//}
 
