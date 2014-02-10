@@ -379,9 +379,8 @@ static QString databasePath()
     QString tmp;
     tmp = settings()->dataPackInstallPath() + dbRelPath;
     if (QFileInfo(tmp).exists())
-        return settings()->dataPackInstallPath();
-    tmp = settings()->dataPackApplicationInstalledPath() + dbRelPath;
-    return settings()->dataPackApplicationInstalledPath();
+        return QString("%1/%2").arg(settings()->dataPackInstallPath()).arg(Constants::DB_DRUGS_NAME);
+    return QString("%1/%2").arg(settings()->dataPackApplicationInstalledPath()).arg(Constants::DB_DRUGS_NAME);
 }
 
 static QString databaseFileName()

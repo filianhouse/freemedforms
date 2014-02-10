@@ -39,7 +39,7 @@ namespace Constants {
 
     // DATABASE
     const char * const DB_DRUGS_NAME     = "drugs";            /*!< \brief Drugs database connection name. */
-    const char * const DB_DRUGS_FILENAME = "drugs/master.db";         /*!< \brief Drug database file name (for SQLite). */
+    const char * const DB_DRUGS_FILENAME = "master.db";         /*!< \brief Drug database file name (for SQLite). */
     const char * const DB_DEFAULT_IDENTIFIANT  = "FR_AFSSAPS";
     const char * const DB_FDA_IDENTIFIANT  = "FDA_US";
 

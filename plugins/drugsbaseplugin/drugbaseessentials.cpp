@@ -382,7 +382,7 @@ bool DrugBaseEssentials::initialize(const QString &pathToDb, bool createIfNotExi
     drugConnector.setAccessMode(Utils::DatabaseConnector::ReadOnly);
     drugConnector.setDriver(Utils::Database::SQLite);
 
-    qWarning() << drugConnector;
+    // qWarning() << drugConnector;
     LOG_FOR("DrugBaseEssentials", tkTr(Trans::Constants::SEARCHING_DATABASE_1_IN_PATH_2).arg(connectionName()).arg(path));
 
     if (createIfNotExists) {
