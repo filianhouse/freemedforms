@@ -296,9 +296,9 @@ bool FrDrugDatatabase::populateDatabase()
     //    Refactoring the code for the FreeDDIManager -> only use ComponentAtcModel
     //    ATC 5665
     //    NUMBER OF MOLECULES           5618
-    //    LINKERMODEL                   3887
-    //    LEFT                          1257
-    //    CONFIDENCE INDICE             77.6255
+    //    LINKERMODEL                   3908
+    //    LEFT                          1246
+    //    CONFIDENCE INDICE             77.8213
 
 //    // 21 May 2013
 //    //    NUMBER OF MOLECULES 5492
