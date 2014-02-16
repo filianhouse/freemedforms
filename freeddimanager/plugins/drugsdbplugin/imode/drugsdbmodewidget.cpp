@@ -254,6 +254,7 @@ void DrugsDbModeWidget::downloadFinished()
 
 void DrugsDbModeWidget::changeStepProgressRange(int min, int max)
 {
+    // IDrugDatabase *base = qobject_cast<IDrugDatabase*>(sender());
     IDrugDatabase *base = d->currentDatabase();
     if (!base)
         return;
