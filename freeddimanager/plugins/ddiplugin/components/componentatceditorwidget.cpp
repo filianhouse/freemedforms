@@ -47,6 +47,7 @@
 #include <QMenu>
 #include <QClipboard>
 #include <QSortFilterProxyModel>
+#include <QFileDialog>
 
 #include <QDebug>
 
@@ -221,13 +222,58 @@ void ComponentAtcEditorWidget::onComponentViewItemActivated(const QModelIndex &i
     }
 }
 
+namespace {
 struct Unreviewed {
-    Unreviewed(const QString &_name, const QString &_suggested, const QString &_comment):
-        name(_name), suggested(_suggested), comment(_comment)
+    Unreviewed(const QString &_name, const QStringList &_suggested, const QString &_comment):
+        name(_name), comment(_comment), suggested(_suggested)
     {}
 
-    QString name, suggested, comment;
+    // Sort by component name
+    static bool lessThan(const Unreviewed &r1, const Unreviewed &r2)
+    {
+        return r1.name < r2.name;
+    }
+
+    QString name, comment;
+    QStringList suggested;
 };
+
+const char * const WIKI_NOTE = \
+        "===== Notes for user edition =====\n\n"
+        "  * You can help the FreeMedForms project to improve the drugs database quality.\n"
+        "  * The file (or these files) contains all the ATC-unlinked drugs component.\n"
+        "  * The drug interaction engines require drug component to be linked to an ATC code."
+        " Some codes are fake and created by the FreeDDIManager application. If you think we should "
+        " create a fake ATC for a specific component please note it <code>**Fake ATC required**</code>"
+        "\n"
+        "  * If you edit this file, mark all your changes in **bold** <code>**my changes**</code>"
+        "    or __underlined__ <code>__my changes__</code>\n"
+        "  * You can also create a new line and sign it <code>  * Your text then click on sign</code>\n"
+        "  * If the component does not have ATC code just mark: <code>**No ATC**</code>\n"
+        "\n";
+
+static void createNewWikiContent(const QStringList &dbUids, QMap<QChar, QString> &wikis, QString &wiki, QChar &current, int &nbCurrent)
+{
+    wiki.prepend(QString("====== Unreviewed components: %1 - Letter %2 ======\n\n\n"
+                         "  * Number of unreviewed components: %3\n"
+                         "  * Date of report generation : %4"
+                         "\n\n"
+                         "%5"
+                         "\n\n")
+                 .arg(dbUids.join("; "))
+                 .arg(current)
+                 .arg(nbCurrent)
+                 .arg(QLocale().toString(QDateTime::currentDateTime(), QLocale::LongFormat))
+                 .arg(WIKI_NOTE)
+                 );
+    wikis.insert(current, wiki);
+
+    // Start a new wiki content
+    nbCurrent = 0;
+    wiki.clear();
+}
+
+}
 
 /**
  * Create a dokuwiki txt file with all information about unreviewed components.
@@ -241,29 +287,67 @@ void ComponentAtcEditorWidget::onCreateUnreviewedFileRequested()
     ComponentAtcModel *model = ddiCore()->componentAtcModel();
     for(int i = 0; i < model->rowCount(); ++i) {
         QModelIndex isRev = model->index(i, ComponentAtcModel::IsReviewed);
+        bool reviewed = (model->data(isRev).toString().compare("Reviewed") == 0);
         // Reviewed component -> skip
-        if (isRev.data().toBool())
+        if (reviewed)
             continue;
 
         // Unreviewed component
+        QModelIndex name = model->index(i, ComponentAtcModel::Name);
+        if (name.data().toString().simplified().isEmpty())
+            continue;
         QModelIndex atc = model->index(i, ComponentAtcModel::AtcCodeList);
         QModelIndex sugg = model->index(i, ComponentAtcModel::SuggestedAtcCodeList);
-        QModelIndex name = model->index(i, ComponentAtcModel::Name);
         QModelIndex comment = model->index(i, ComponentAtcModel::Comments);
         QStringList codes;
         codes << sugg.data().toString().split(";", QString::SkipEmptyParts);
         codes << atc.data().toString().split(";", QString::SkipEmptyParts);
         codes.removeDuplicates();
         codes.removeAll("");
-        unrev << Unreviewed(name.data().toString(), codes.join(";"), comment.data().toString());
+        unrev << Unreviewed(name.data().toString(), codes, comment.data().toString());
 
         // TODO: How to add all drug brandname containing the component (using DrugsDb but we are in DDI)
     }
+    qSort(unrev.begin(), unrev.end(), Unreviewed::lessThan);
 
     // Create a wiki like file content
+    QString toc;
+    toc += QString("====== Unreviewed components: %1 ======\n\n\n"
+                    "  * Number of components: %2\n"
+                    "  * Number of unreviewed components: %3\n"
+                    "  * Date of report generation : %4"
+                    "\n\n"
+                    "%5"
+                    "\n\n"
+                   "===== Table of contents =====\n"
+                   "\n\n")
+            .arg(model->databaseUids().join("; "))
+            .arg(model->rowCount())
+            .arg(unrev.count())
+            .arg(QLocale().toString(QDateTime::currentDateTime(), QLocale::LongFormat))
+            .arg(WIKI_NOTE);
+
+    QMap<QChar, QString> wikis;
+    QChar current;
+    int nbCurrent = 0;
     QString wiki;
-    wiki += QString("====== Unreviewed components: %1 ======\n\n\n").arg(model->databaseUids().join("; "));
     foreach(const Unreviewed &ur, unrev) {
+        QString normalizedName = Utils::removeAccents(ur.name);
+        if (current.isNull())
+            if (!normalizedName[0].isLetter())
+                current = '0';
+            else
+                current = normalizedName[0];
+        else if (current != normalizedName[0]) {
+            // All numbers and [ ( stay in the same block
+            if (normalizedName[0].isLetter()) {
+                // New char -> Store the current wiki content
+                createNewWikiContent(model->databaseUids(), wikis, wiki, current, nbCurrent);
+                current = normalizedName[0];
+            }
+        }
+        ++nbCurrent;
+
         // Create ATC links
         QString atc;
         foreach(const QString &code, ur.suggested)
@@ -272,14 +356,14 @@ void ComponentAtcEditorWidget::onCreateUnreviewedFileRequested()
         // Create component search links
         // TODO: improve this for foreign drug database (we don't need CNAMTS links)
         QString search;
-        search += QString("\n    * %1").arg(QString("http://www.codage.ext.cnamts.fr/codif/bdm//critere/index_lis_rech.php?p_nom_rech=%1%2&p_remb=tout&p_cri=subact&p_site=").arg("%25").arg(d->proxyModel->index(index.row(), ComponentAtcModel::Name).data().toString().toUpper()));
-        search += QString("\n    * %1").arg(QString("http://www.google.fr/search?rls=en&q=%1+atc&ie=UTF-8&oe=UTF-8&redir_esc=").arg(d->proxyModel->index(index.row(), ComponentAtcModel::Name).data().toString()));
-        search += QString("\n    * %1").arg(QString("http://www.whocc.no/atc_ddd_index/?name=%1").arg(d->proxyModel->index(index.row(), ComponentAtcModel::Name).data().toString()));
-        search += QString("\n    * %1").arg(QString("http://www.portailmedicaments.resip.fr/bcb_recherche/classes.asp?cc=1"));
+        search += QString("\n    * [[%1|Search CNAMTS database]]").arg(QString("http://www.codage.ext.cnamts.fr/codif/bdm//critere/index_lis_rech.php?p_nom_rech=%1%2&p_remb=tout&p_cri=subact&p_site=").arg("%25").arg(Utils::removeAccents(ur.name.toUpper()).simplified()));
+        search += QString("\n    * [[%1|Search Google]]").arg(QString("http://www.google.fr/search?rls=en&q=%1+atc&ie=UTF-8&oe=UTF-8&redir_esc=").arg(ur.name.toUpper()));
+        search += QString("\n    * [[%1|Search WHO ATC index]]").arg(QString("http://www.whocc.no/atc_ddd_index/?name=%1").arg(Utils::removeAccents(ur.name.toUpper())));
+        search += QString("\n    * [[%1|Search RESIP]]").arg(QString("http://www.portailmedicaments.resip.fr/bcb_recherche/classes.asp?cc=1"));
 
         wiki += QString("===== %1 =====\n\n"
                         "  * Name: %2\n"
-                        "  * Suggested ATC codes: %2\n"
+                        "  * Suggested ATC codes: %3\n"
                         "  * Comment: %3\n"
                         "  * Suggested search links: %4\n"
                         "\n\n")
@@ -289,19 +373,51 @@ void ComponentAtcEditorWidget::onCreateUnreviewedFileRequested()
                 .arg(search)
                 ;
     }
-    if (!Utils::saveStringToFile(wiki,
-                                 settings().path(Core::ISettings::UserDocumentsPath),
-                                 tkTr(Trans::Constants::FILE_FILTER_TXT),
-                                 tr("Saving %1 unreviewed item(s) from the model").arg(nb)))
-            Utils::warningMessageBox(tkTr(Trans::Constants::FILE_1_CAN_NOT_BE_CREATED).arg(tr("Unreviewed components")));
+    createNewWikiContent(model->databaseUids(), wikis, wiki, current, nbCurrent);
+
+    // Ask for a dir
+    QString path = QFileDialog::getExistingDirectory(this,
+                                            tr("Select a dir to save wiki content"),
+                                            settings()->path(Core::ISettings::UserDocumentsPath));
+    if (path.isEmpty())
+        return;
+
+    // Save all wiki content and create a TOC
+    QMapIterator<QChar, QString> it(wikis);
+    while (it.hasNext()) {
+        it.next();
+        // Save wiki content
+        QString fileName = QString("%1/component_%2.txt").arg(path).arg(it.key().toLower());
+        if (!Utils::saveStringToFile(it.value(), fileName, Utils::Overwrite, Utils::DontWarnUser)) {
+            Utils::warningMessageBox(tkTr(Trans::Constants::FILE_1_CAN_NOT_BE_CREATED).arg(fileName), "");
+            continue;
+        }
+
+        // Add a line to the TOC
+        QString wikiUrl = QFileInfo(fileName).baseName();
+        toc += QString("\n  * Component starting with [[%1|%2]]")
+                .arg(wikiUrl)
+                .arg(it.key());
+    }
+    QString fileName = QString("%1/toc.txt").arg(path);
+    if (!Utils::saveStringToFile(toc,fileName, Utils::Overwrite, Utils::DontWarnUser))
+            Utils::warningMessageBox(tkTr(Trans::Constants::FILE_1_CAN_NOT_BE_CREATED).arg(tr("Unreviewed component(s)")), "");
+
+    Utils::informativeMessageBox(tr("Unreviewed component wiki report created."),
+                                 tr("All files are stored in the following path:\n%1").arg(path));
 }
 
+/**
+ * When model resets update the ui overview label
+ */
 void ComponentAtcEditorWidget::onModelReset()
 {
     d->ui->overview->setText(d->model->overview());
 }
 
-
+/**
+ * Manually submit the model
+ */
 void ComponentAtcEditorWidget::saveModel()
 {
     d->model = ddiCore()->componentAtcModel();
