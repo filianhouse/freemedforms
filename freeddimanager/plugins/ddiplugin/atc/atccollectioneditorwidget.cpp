@@ -55,6 +55,9 @@
 
 #include <QDebug>
 
+// FIXME: create new ATC cause ATC model to be duplicated each time a new ATC is created
+// FIXME: searching in codes does not correctly work
+
 using namespace DDI;
 using namespace Internal;
 using namespace Trans::ConstantTranslations;
