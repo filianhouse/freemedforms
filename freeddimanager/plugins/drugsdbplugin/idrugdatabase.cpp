@@ -1365,8 +1365,8 @@ bool IDrugDatabase::linkDrugsComponentsAndDrugInteractors()
     if (!checkDatabase())
         return false;
 
-    Q_EMIT progressLabelChanged(tr("Linking drugs components to ATC codes"));
     Q_EMIT progressRangeChanged(0, 2);
+    Q_EMIT progressLabelChanged(tr("Linking drugs components to ATC codes. Step 1"));
     Q_EMIT progress(0);
 
     // Create component linker data
@@ -1389,6 +1389,7 @@ bool IDrugDatabase::linkDrugsComponentsAndDrugInteractors()
     }
     data.setAtcCodeIds(ids);
     query.finish();
+    qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
 
     // Get all components ids
     req = _database->select(Constants::Table_MOLS, QList<int>()
@@ -1405,6 +1406,7 @@ bool IDrugDatabase::linkDrugsComponentsAndDrugInteractors()
     }
     query.finish();
     data.setComponentIds(ids);
+    qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
 
     // Get all linked component (compo1 is linked to compo2 using LK_NATURE in compo table)
     // TODO: this part could be improved using SQL specific commands... Any taker?
@@ -1457,6 +1459,7 @@ bool IDrugDatabase::linkDrugsComponentsAndDrugInteractors()
                 return false;
             }
             query2.finish();
+            qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
         }
     } else {
         LOG_QUERY_ERROR(query);
@@ -1466,6 +1469,9 @@ bool IDrugDatabase::linkDrugsComponentsAndDrugInteractors()
     Utils::Log::logTimeElapsed(chrono, "dd", "dd");
 
     // qWarning() << data.debugEquivalences();
+
+    Q_EMIT progressLabelChanged(tr("Linking drugs components to ATC codes. Step 2"));
+    Q_EMIT progress(1);
 
     // Create the component to ATC model
     DDI::ComponentAtcModel *linkerModel = new DDI::ComponentAtcModel(this);
@@ -1489,22 +1495,12 @@ bool IDrugDatabase::linkDrugsComponentsAndDrugInteractors()
 //    if (!model->moleculeLinker(&data))
 //        return false;
 
-    Q_EMIT progress(1);
-
-    Q_EMIT progressLabelChanged(tr("Saving components to ATC links to database"));
-    Q_EMIT progressRangeChanged(0, 1);
-    Q_EMIT progress(0);
 
     // Save to links to drugs database
 //    Tools::addComponentAtcLinks(drugEssentialDatabase(), data.moleculeIdToAtcId, sourceId());
 
     LOG(QString("Database processed"));
-
-    // add unfound to extralinkermodel
-    Q_EMIT progressLabelChanged(tr("Updating component link XML file"));
-//    model->addUnreviewedMolecules(::FR_DRUGS_DATABASE_NAME, data.unfoundMoleculeAssociations);
-//    model->saveModel();
-    Q_EMIT progress(1);
+    Q_EMIT progress(2);
 
     return true;
 }
