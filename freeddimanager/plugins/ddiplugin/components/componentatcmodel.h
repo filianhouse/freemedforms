@@ -32,13 +32,13 @@
 #include <QAbstractTableModel>
 #include <QMultiHash>
 #include <QHash>
-#include <QString>
+#include <QStringList>
 
 /**
  * \file componentatcmodel.h
  * \author Eric Maeker
  * \version 0.10.0
- * \date 02 Dec 2013
+ * \date 16 Feb 2013
 */
 
 namespace DDI {
@@ -83,9 +83,14 @@ public:
 
     QStringList availableDrugsDatabases() const;
     bool selectDatabase(const QString &dbUid, const QString &dbUid2 = QString::null);
+    QStringList databaseUids() const;
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const;
     int columnCount(const QModelIndex &parent = QModelIndex()) const;
+
+    void fetchMore(const QModelIndex &parent);
+    bool canFetchMore(const QModelIndex &parent) const;
+    void fetchAll();
 
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
     bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole);

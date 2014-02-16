@@ -55,7 +55,7 @@ protected Q_SLOTS:
     void onComponentViewItemActivated(const QModelIndex &index);
     void onComponentViewItemChanged(const QModelIndex &current, const QModelIndex &previous);
     void onComponentViewItemPressed(const QModelIndex &index);
-    void onRemoveUnreviewedRequested();
+    void onCreateUnreviewedFileRequested();
     void onModelReset();
     void saveModel();
 

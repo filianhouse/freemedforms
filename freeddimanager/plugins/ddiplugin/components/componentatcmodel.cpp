@@ -388,6 +388,15 @@ bool ComponentAtcModel::selectDatabase(const QString &dbUid1, const QString &dbU
     return true;
 }
 
+QStringList ComponentAtcModel::databaseUids() const
+{
+    QStringList uids;
+    uids <<  d->_dbUid1;
+    if (!d->_dbUid2.isEmpty())
+        uids << d->_dbUid2;
+    return uids;
+}
+
 /** Define the reviewer \e name to use */
 void ComponentAtcModel::setActualReviewer(const QString &name)
 {
@@ -402,6 +411,22 @@ int ComponentAtcModel::rowCount(const QModelIndex &parent) const
 int ComponentAtcModel::columnCount(const QModelIndex &) const
 {
     return ColumnCount;
+}
+
+void ComponentAtcModel::fetchMore(const QModelIndex &parent)
+{
+    d->_sql->fetchMore(parent);
+}
+
+bool ComponentAtcModel::canFetchMore(const QModelIndex &parent) const
+{
+    return d->_sql->canFetchMore(parent);
+}
+
+void ComponentAtcModel::fetchAll()
+{
+    while (d->_sql->canFetchMore(d->_sql->index(0,0)))
+        d->_sql->fetchMore(d->_sql->index(0,0));
 }
 
 QVariant ComponentAtcModel::data(const QModelIndex &index, int role) const
@@ -715,6 +740,7 @@ ComponentLinkerResult &ComponentAtcModel::startComponentLinkage(const ComponentL
             continue;
         }
         query.finish();
+        qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
     }
     qWarning() << "MODEL " << z;
 
@@ -797,6 +823,7 @@ ComponentLinkerResult &ComponentAtcModel::startComponentLinkage(const ComponentL
 //            }
 //            query.finish();
 //            // End draft
+            qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
         }
     }
     db.commit();
@@ -839,6 +866,7 @@ ComponentLinkerResult &ComponentAtcModel::startComponentLinkage(const ComponentL
         if (!atcCodes.isEmpty()) {
             compoLblToAtcSuggested.insert(componentLbl, atcCodes.join(";"));
         }
+        qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
     }
 
     // Third pass: find non-exact match component label (remove (*)) <-> atc label
@@ -866,7 +894,7 @@ ComponentLinkerResult &ComponentAtcModel::startComponentLinkage(const ComponentL
         if (!atcCodes.isEmpty()) {
             compoLblToAtcSuggested.insert(componentLbl, atcCodes.join(";"));
         }
-
+        qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
     }
 
     LOG(QString("Suggestion found (number of components): %1").arg(result->componentIdToAtcId().uniqueKeys().count()));
@@ -890,6 +918,7 @@ ComponentLinkerResult &ComponentAtcModel::startComponentLinkage(const ComponentL
                 unfoundComponents.insert(id, lbl);
         }
     }
+    qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
 
     // Compute completion percent
     result->setCompletion((double)result->componentIdToAtcId().uniqueKeys().count() / (double)data.compoIds.count() * 100.0);
@@ -920,6 +949,7 @@ bool ComponentAtcModel::submitAll()
         return false;
     }
     LOG("Model correctly saved");
+    // fetchAll();
     return true;
 }
 

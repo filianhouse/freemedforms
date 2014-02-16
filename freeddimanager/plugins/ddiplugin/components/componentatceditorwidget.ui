@@ -44,9 +44,9 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="removeUnreviewed">
+      <widget class="QPushButton" name="createUnreviewed">
        <property name="text">
-        <string>Remove unreviewed</string>
+        <string>Create unreviewed.txt</string>
        </property>
       </widget>
      </item>

@@ -29,10 +29,15 @@
 #include <ddiplugin/ddicore.h>
 #include <ddiplugin/atc/searchatcindatabasedialog.h>
 
+#include <coreplugin/icore.h>
+#include <coreplugin/isettings.h>
+
 #include <utils/log.h>
 #include <utils/global.h>
 #include <translationutils/constants.h>
 #include <translationutils/trans_drugs.h>
+#include <translationutils/trans_filepathxml.h>
+#include <translationutils/trans_msgerror.h>
 
 #include <QFile>
 #include <QList>
@@ -47,6 +52,7 @@
 
 #include "ui_componentatceditorwidget.h"
 
+static inline Core::ISettings *settings() {return Core::ICore::instance()->settings();}
 static inline DDI::DDICore *ddiCore() {return DDI::DDICore::instance();}
 
 using namespace DDI;
@@ -90,6 +96,7 @@ ComponentAtcEditorWidget::ComponentAtcEditorWidget(QWidget *parent) :
     setObjectName("ComponentAtcEditorWidget");
     d->ui->setupUi(this);
     d->model = ddiCore()->componentAtcModel();
+    d->model->fetchAll();
     d->ui->availableDrugsDb->addItems(d->model->availableDrugsDatabases());
     if (d->model->availableDrugsDatabases().count())
         d->model->selectDatabase(d->model->availableDrugsDatabases().at(0));
@@ -127,7 +134,7 @@ ComponentAtcEditorWidget::ComponentAtcEditorWidget(QWidget *parent) :
     connect(d->ui->tableView, SIGNAL(activated(QModelIndex)), this, SLOT(onComponentViewItemActivated(QModelIndex)));
     connect(d->ui->tableView, SIGNAL(pressed(QModelIndex)), this, SLOT(onComponentViewItemPressed(QModelIndex)));
     connect(d->ui->tableView->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)), this, SLOT(onComponentViewItemChanged(QModelIndex,QModelIndex)));
-    connect(d->ui->removeUnreviewed, SIGNAL(clicked()), this, SLOT(onRemoveUnreviewedRequested()));
+    connect(d->ui->createUnreviewed, SIGNAL(clicked()), this, SLOT(onCreateUnreviewedFileRequested()));
     connect(d->ui->searchMol, SIGNAL(textChanged(QString)), d->proxyModel, SLOT(setFilterWildcard(QString)));
     connect(d->model, SIGNAL(modelReset()), this, SLOT(onModelReset()));
 
@@ -158,6 +165,7 @@ void ComponentAtcEditorWidget::onChangeComponentDrugDatabaseUidRequested(const i
 
 void ComponentAtcEditorWidget::onComponentViewItemChanged(const QModelIndex &current, const QModelIndex &previous)
 {
+    Q_UNUSED(previous);
     d->ui->textBrowser->setHtml(current.data(Qt::ToolTipRole).toString());
 }
 
@@ -169,10 +177,12 @@ void ComponentAtcEditorWidget::onComponentViewItemPressed(const QModelIndex &ind
         QAction *google = new QAction(tr("Search Google (copy molecule to clipboard)"), menu);
         QAction *who = new QAction(tr("Search WHO (copy molecule to clipboard)"), menu);
         QAction *resip = new QAction(tr("Search RESIP (copy molecule to clipboard)"), menu);
+        QAction *cnamts = new QAction(tr("Search CNAMTS database"), menu);
         QAction *copyClip = new QAction(tr("Copy molecule name to clipboard"), menu);
         QAction *atcSearchDialog = new QAction(tr("Open the ATC search dialog"), menu);
         menu->addAction(atcSearchDialog);
         menu->addAction(google);
+        menu->addAction(cnamts);
         menu->addAction(who);
         menu->addAction(resip);
         menu->addAction(copyClip);
@@ -183,6 +193,8 @@ void ComponentAtcEditorWidget::onComponentViewItemPressed(const QModelIndex &ind
                 d->proxyModel->setData(d->proxyModel->index(index.row(), ComponentAtcModel::AtcCodeList), dlg.getSelectedCodes().join(";"));
                 d->proxyModel->setData(d->proxyModel->index(index.row(), ComponentAtcModel::IsReviewed), 1);
             }
+        } else if (selected == cnamts) {
+            QDesktopServices::openUrl(QUrl(QString("http://www.codage.ext.cnamts.fr/codif/bdm//critere/index_lis_rech.php?p_nom_rech=%1%2&p_remb=tout&p_cri=subact&p_site=").arg("%25").arg(d->proxyModel->index(index.row(), ComponentAtcModel::Name).data().toString().toUpper())));
         } else if (selected == google) {
             QDesktopServices::openUrl(QUrl(QString("http://www.google.fr/search?rls=en&q=%1+atc&ie=UTF-8&oe=UTF-8&redir_esc=").arg(d->proxyModel->index(index.row(), ComponentAtcModel::Name).data().toString())));
         } else if (selected == who) {
@@ -209,12 +221,79 @@ void ComponentAtcEditorWidget::onComponentViewItemActivated(const QModelIndex &i
     }
 }
 
-void ComponentAtcEditorWidget::onRemoveUnreviewedRequested()
+struct Unreviewed {
+    Unreviewed(const QString &_name, const QString &_suggested, const QString &_comment):
+        name(_name), suggested(_suggested), comment(_comment)
+    {}
+
+    QString name, suggested, comment;
+};
+
+/**
+ * Create a dokuwiki txt file with all information about unreviewed components.
+ */
+void ComponentAtcEditorWidget::onCreateUnreviewedFileRequested()
 {
-    d->model = ddiCore()->componentAtcModel();
-    int nb = d->model->removeUnreviewedMolecules();
-    Utils::informativeMessageBox(tr("Removed %1 unreviewed item(s) from the model").arg(nb),"");
-    onModelReset();
+    // TODO: this code should be moved into DrugsDb::IDrugDatabase
+
+    // Get all unreviewed component names with their comments and suggested ATC codes
+    QList<Unreviewed> unrev;
+    ComponentAtcModel *model = ddiCore()->componentAtcModel();
+    for(int i = 0; i < model->rowCount(); ++i) {
+        QModelIndex isRev = model->index(i, ComponentAtcModel::IsReviewed);
+        // Reviewed component -> skip
+        if (isRev.data().toBool())
+            continue;
+
+        // Unreviewed component
+        QModelIndex atc = model->index(i, ComponentAtcModel::AtcCodeList);
+        QModelIndex sugg = model->index(i, ComponentAtcModel::SuggestedAtcCodeList);
+        QModelIndex name = model->index(i, ComponentAtcModel::Name);
+        QModelIndex comment = model->index(i, ComponentAtcModel::Comments);
+        QStringList codes;
+        codes << sugg.data().toString().split(";", QString::SkipEmptyParts);
+        codes << atc.data().toString().split(";", QString::SkipEmptyParts);
+        codes.removeDuplicates();
+        codes.removeAll("");
+        unrev << Unreviewed(name.data().toString(), codes.join(";"), comment.data().toString());
+
+        // TODO: How to add all drug brandname containing the component (using DrugsDb but we are in DDI)
+    }
+
+    // Create a wiki like file content
+    QString wiki;
+    wiki += QString("====== Unreviewed components: %1 ======\n\n\n").arg(model->databaseUids().join("; "));
+    foreach(const Unreviewed &ur, unrev) {
+        // Create ATC links
+        QString atc;
+        foreach(const QString &code, ur.suggested)
+            atc += QString("\n    * [[http://http://www.whocc.no/atc_ddd_index/?code=%1|%1]]").arg(code);
+
+        // Create component search links
+        // TODO: improve this for foreign drug database (we don't need CNAMTS links)
+        QString search;
+        search += QString("\n    * %1").arg(QString("http://www.codage.ext.cnamts.fr/codif/bdm//critere/index_lis_rech.php?p_nom_rech=%1%2&p_remb=tout&p_cri=subact&p_site=").arg("%25").arg(d->proxyModel->index(index.row(), ComponentAtcModel::Name).data().toString().toUpper()));
+        search += QString("\n    * %1").arg(QString("http://www.google.fr/search?rls=en&q=%1+atc&ie=UTF-8&oe=UTF-8&redir_esc=").arg(d->proxyModel->index(index.row(), ComponentAtcModel::Name).data().toString()));
+        search += QString("\n    * %1").arg(QString("http://www.whocc.no/atc_ddd_index/?name=%1").arg(d->proxyModel->index(index.row(), ComponentAtcModel::Name).data().toString()));
+        search += QString("\n    * %1").arg(QString("http://www.portailmedicaments.resip.fr/bcb_recherche/classes.asp?cc=1"));
+
+        wiki += QString("===== %1 =====\n\n"
+                        "  * Name: %2\n"
+                        "  * Suggested ATC codes: %2\n"
+                        "  * Comment: %3\n"
+                        "  * Suggested search links: %4\n"
+                        "\n\n")
+                .arg(ur.name)
+                .arg(atc)
+                .arg(ur.comment)
+                .arg(search)
+                ;
+    }
+    if (!Utils::saveStringToFile(wiki,
+                                 settings().path(Core::ISettings::UserDocumentsPath),
+                                 tkTr(Trans::Constants::FILE_FILTER_TXT),
+                                 tr("Saving %1 unreviewed item(s) from the model").arg(nb)))
+            Utils::warningMessageBox(tkTr(Trans::Constants::FILE_1_CAN_NOT_BE_CREATED).arg(tr("Unreviewed components")));
 }
 
 void ComponentAtcEditorWidget::onModelReset()
