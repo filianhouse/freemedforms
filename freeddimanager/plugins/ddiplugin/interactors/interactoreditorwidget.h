@@ -67,6 +67,7 @@ private Q_SLOTS:
     void toggleClassMolsFilter(QAction*);
     void updateCounts();
     void nextUnreviewedOrUnlinked();
+    void onCreatePdfOutputRequested();
 
 private:
     void retranslateUi();

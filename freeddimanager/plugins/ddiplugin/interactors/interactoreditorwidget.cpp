@@ -166,8 +166,17 @@ public:
         _toolButton->setPopupMode(QToolButton::InstantPopup);
 
         _toolBar = new QToolBar(q);
-        _toolBar->addAction(aDownloadAllNeededPmids);
-        _toolBar->addSeparator();
+
+        // TEST
+        QAction *a = new QAction(q);
+        a->setText("Class HTML");
+        _toolBar->addAction(a);
+        QObject::connect(a, SIGNAL(triggered()), q, SLOT(onCreatePdfOutputRequested()));
+        //
+
+
+        // _toolBar->addAction(aDownloadAllNeededPmids);
+        // _toolBar->addSeparator();
         _toolBar->addAction(aCreateNewClass);
         _toolBar->addAction(aCreateNewInteractor);
         _toolBar->addSeparator();
@@ -175,7 +184,7 @@ public:
         _toolBar->addSeparator();
         _toolBar->addAction(aRemoveCurrent);
         _toolBar->addAction(aEdit);
-        _toolBar->addAction(aTranslateThis);
+        // _toolBar->addAction(aTranslateThis);
         _toolBar->addSeparator();
         _toolBar->addAction(aRevert);
         _toolBar->addAction(aSave);
@@ -277,6 +286,7 @@ public:
         _mapper->addMapping(ui->isClass, DrugInteractorTableModel::IsInteractingClass, "checked");
         _mapper->addMapping(ui->isReviewed, DrugInteractorTableModel::IsReviewed, "checked");
         _mapper->addMapping(ui->isAutoFound, DrugInteractorTableModel::IsAutoFound, "checked");
+        _mapper->addMapping(ui->valid, DrugInteractorTableModel::IsValid, "checked");
         _mapper->addMapping(ui->notWarnDuplicated, DrugInteractorTableModel::DoNotWarnDuplicated, "checked");
     }
 
@@ -663,6 +673,13 @@ void InteractorEditorWidget::nextUnreviewedOrUnlinked()
         interactorActivated(selectMe);
     }
 }
+
+void InteractorEditorWidget::onCreatePdfOutputRequested()
+{
+    ddiCore()->drugInteractorTableModel()->toPdfFile();
+}
+
+
 
 /** Retranslate UI and actions */
 void InteractorEditorWidget::retranslateUi()

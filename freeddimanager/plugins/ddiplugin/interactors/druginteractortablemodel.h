@@ -110,6 +110,8 @@ public:
     QString interactorLabel(const QString &uid) const;
     bool interactorUidExists(const QString &uid) const;
 
+    void toPdfFile() const;
+
 public Q_SLOTS:
     virtual bool submit();
 

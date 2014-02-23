@@ -209,15 +209,11 @@ QVariant DrugInteractorTableModel::data(const QModelIndex &index, int role) cons
         bool isClass = d->_sql->data(classIndex).toBool();
         const QVariant &children = d->_sql->data(childIndex);
         //const QVariant &atc = d->_sql->data(atcIndex);
+
         if (isClass) {
             // Class without children?
-            if (children.isNull()) {
-                // qWarning() << "DrugInteractor: class without children" << d->_sql->index(index.row(), Constants::INTERACTOR_FR).data();
+            if (children.isNull())
                 return QColor(255,50,50,150);
-            }
-            // Children without ATC code
-            //                    return QColor(255,50,50,150);
-            // TODO: here
         } else {
             // Children without being a class?
             if (!children.isNull()) {
@@ -226,13 +222,17 @@ QVariant DrugInteractorTableModel::data(const QModelIndex &index, int role) cons
                 return QColor(255,50,50,150);
             }
         }
+
         // Not reviewed?
         QModelIndex rev = d->_sql->index(index.row(), Constants::INTERACTOR_ISREVIEWED);
-        if (!d->_sql->data(rev).toBool()) {
-//            qWarning() << "not reviewed" << d->_sql->index(index.row(), Constants::INTERACTOR_FR).data();
+        if (!d->_sql->data(rev).toBool())
             return QColor(50,250,50,150);
-        }
-        // If class, all children reviewed?
+
+        // No Reference?
+        QModelIndex ref = d->_sql->index(index.row(), Constants::INTERACTOR_REF);
+        if (d->_sql->data(ref).toString().simplified().isEmpty())
+            return QColor(250,0,0,150);
+
     } else if (role == Qt::CheckStateRole) {
         int sql = -1;
         switch (index.column()) {
@@ -453,6 +453,65 @@ void DrugInteractorTableModel::setSqlFilter(const QString &filter)
     d->_sql->setFilter(filter);
     d->_sql->select();
 }
+
+/**
+ * Transform all Drug interactor information into a human readable PDF file.
+ * This file can be used to ease the checking process (for those you wants
+ * to work on papers).
+ */
+void DrugInteractorTableModel::toPdfFile() const
+{
+    // Create cache data
+    QMultiHash<QString, QString> classesUidsWithChildren;
+    QHash<QString, QString> uidToName;
+    for(int i = 0; i < rowCount(); ++i) {
+        QModelIndex isClass = index(i, IsInteractingClass);
+        QModelIndex uidIndex = index(i, Uuid);
+        QString uid = uidIndex.data().toString();
+        QModelIndex nameIndex = index(i, FrLabel);
+        uidToName.insert(uid, nameIndex.data().toString());
+
+        if (isClass.data().toBool()) {
+            QModelIndex childrenIndex = index(i, ChildrenUuid);
+            QStringList children = childrenIndex.data().toString().split(";", QString::SkipEmptyParts);
+            foreach(const QString &c, children)
+                classesUidsWithChildren.insertMulti(uid, c);
+        }
+    }
+
+    // Create output
+    QStringList classOutput, interactorOutput;
+    for(int i = 0; i < rowCount(); ++i) {
+        QModelIndex isClass = index(i, IsInteractingClass);
+        QModelIndex uidIndex = index(i, Uuid);
+        QString uid = uidIndex.data().toString();
+        QString name = uidToName.value(uid);
+
+        // Class output
+        if (isClass.data().toBool()) {
+            const QStringList &children = classesUidsWithChildren.values(uid);
+            QString out;
+            out += QString("<b>%1</b><br><small>").arg(name);
+            // TODO: add class info
+            QString out2;
+            foreach(const QString &c, children) {
+                out2.prepend(QString("%1 ; ").arg(uidToName.value(c)));
+            }
+            out += out2;
+            out += QString("</small><br><br>");
+            classOutput << out;
+        } else {
+            // Interactor output
+
+        }
+    }
+    qSort(classOutput);
+
+    // TODO: finish the code
+    Utils::saveStringToFile(classOutput.join("\n"), "/Users/eric/FreeDDIManager/Documents/classes.html", Utils::Overwrite, Utils::DontWarnUser);
+}
+
+
 
 DrugInteractorFilteredTableModel::DrugInteractorFilteredTableModel(QObject *parent) :
     DrugInteractorTableModel(parent)
