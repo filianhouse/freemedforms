@@ -77,6 +77,45 @@ public:
         QObject::connect(_sql, SIGNAL(modelReset()), q, SIGNAL(modelReset()));
     }
 
+    int sqlColumn(const QModelIndex &index)
+    {
+        int sql = -1;
+        switch (index.column()) {
+        case DrugInteractorTableModel::Id: sql = Constants::INTERACTOR_ID; break;
+        case DrugInteractorTableModel::Uuid: sql = Constants::INTERACTOR_UID; break;
+        case DrugInteractorTableModel::IsValid: sql = Constants::INTERACTOR_ISVALID; break;
+        case DrugInteractorTableModel::IsInteractingClass: sql = Constants::INTERACTOR_ISCLASS; break;
+        case DrugInteractorTableModel::IsReviewed: sql = Constants::INTERACTOR_ISREVIEWED; break;
+        case DrugInteractorTableModel::IsAutoFound: sql = Constants::INTERACTOR_ISAUTOFOUND; break;
+        case DrugInteractorTableModel::DoNotWarnDuplicated: sql = Constants::INTERACTOR_WARNDUPLICATES; break;
+        case DrugInteractorTableModel::TranslatedLabel:
+        {
+            switch (QLocale().language()) {
+            case QLocale::French: sql = Constants::INTERACTOR_FR; break;
+            case QLocale::English: sql = Constants::INTERACTOR_EN; break;
+            case QLocale::German: sql = Constants::INTERACTOR_DE; break;
+            default: sql = Constants::INTERACTOR_EN; break;
+            }
+            break;
+        }
+        case DrugInteractorTableModel::EnLabel: sql = Constants::INTERACTOR_EN; break;
+        case DrugInteractorTableModel::FrLabel: sql = Constants::INTERACTOR_FR; break;
+        case DrugInteractorTableModel::DeLabel: sql = Constants::INTERACTOR_DE; break;
+        case DrugInteractorTableModel::ClassInformationFr: sql = Constants::INTERACTOR_INFO_FR; break;
+        case DrugInteractorTableModel::ClassInformationEn: sql = Constants::INTERACTOR_INFO_EN; break;
+        case DrugInteractorTableModel::ClassInformationDe: sql = Constants::INTERACTOR_INFO_DE; break;
+        case DrugInteractorTableModel::ATCCodeStringList: sql = Constants::INTERACTOR_ATC; break;
+        case DrugInteractorTableModel::DateOfCreation: sql = Constants::INTERACTOR_DATECREATE; break;
+        case DrugInteractorTableModel::DateLastUpdate: sql = Constants::INTERACTOR_DATEUPDATE; break;
+        case DrugInteractorTableModel::DateReview: sql = Constants::INTERACTOR_DATEREVIEW; break;
+        case DrugInteractorTableModel::PMIDStringList: sql = Constants::INTERACTOR_PMIDS; break;
+        case DrugInteractorTableModel::ChildrenUuid: sql = Constants::INTERACTOR_CHILDREN; break;
+        case DrugInteractorTableModel::Reference: sql = Constants::INTERACTOR_REF; break;
+        case DrugInteractorTableModel::Comment: sql = Constants::INTERACTOR_COMMENT; break;
+        };
+        return sql;
+    }
+
 public:
     QSqlTableModel *_sql;
     QStringList _distinctUids;
@@ -152,41 +191,7 @@ QVariant DrugInteractorTableModel::data(const QModelIndex &index, int role) cons
         return QVariant();
 
     if (role == Qt::DisplayRole || role == Qt::EditRole) {
-        int sql = -1;
-        switch (index.column()) {
-        case Id: sql = Constants::INTERACTOR_ID; break;
-        case Uuid: sql = Constants::INTERACTOR_UID; break;
-        case IsValid: sql = Constants::INTERACTOR_ISVALID; break;
-        case IsInteractingClass: sql = Constants::INTERACTOR_ISCLASS; break;
-        case IsReviewed: sql = Constants::INTERACTOR_ISREVIEWED; break;
-        case IsAutoFound: sql = Constants::INTERACTOR_ISAUTOFOUND; break;
-        case DoNotWarnDuplicated: sql = Constants::INTERACTOR_WARNDUPLICATES; break;
-        case TranslatedLabel:
-        {
-            switch (QLocale().language()) {
-            case QLocale::French: sql = Constants::INTERACTOR_FR; break;
-            case QLocale::English: sql = Constants::INTERACTOR_EN; break;
-            case QLocale::German: sql = Constants::INTERACTOR_DE; break;
-            default: sql = Constants::INTERACTOR_EN; break;
-            }
-            break;
-        }
-        case EnLabel: sql = Constants::INTERACTOR_EN; break;
-        case FrLabel: sql = Constants::INTERACTOR_FR; break;
-        case DeLabel: sql = Constants::INTERACTOR_DE; break;
-        case ClassInformationFr: sql = Constants::INTERACTOR_INFO_FR; break;
-        case ClassInformationEn: sql = Constants::INTERACTOR_INFO_EN; break;
-        case ClassInformationDe: sql = Constants::INTERACTOR_INFO_DE; break;
-        case ATCCodeStringList: sql = Constants::INTERACTOR_ATC; break;
-        case DateOfCreation: sql = Constants::INTERACTOR_DATECREATE; break;
-        case DateLastUpdate: sql = Constants::INTERACTOR_DATEUPDATE; break;
-        case DateReview: sql = Constants::INTERACTOR_DATEREVIEW; break;
-        case PMIDStringList: sql = Constants::INTERACTOR_PMIDS; break;
-        case ChildrenUuid: sql = Constants::INTERACTOR_CHILDREN; break;
-        case Reference: sql = Constants::INTERACTOR_REF; break;
-        case Comment: sql = Constants::INTERACTOR_COMMENT; break;
-        };
-
+        int sql = d->sqlColumn(index);
         QModelIndex sqlIndex = d->_sql->index(index.row(), sql);
         return d->_sql->data(sqlIndex, role);
 
@@ -253,40 +258,7 @@ bool DrugInteractorTableModel::setData(const QModelIndex &index, const QVariant 
         return false;
     int sql = -1;
     if (role == Qt::EditRole) {
-        switch (index.column()) {
-        case Id: sql = Constants::INTERACTOR_ID; break;
-        case Uuid: sql = Constants::INTERACTOR_UID; break;
-        case IsValid: sql = Constants::INTERACTOR_ISVALID; break;
-        case IsInteractingClass: sql = Constants::INTERACTOR_ISCLASS; break;
-        case IsReviewed: sql = Constants::INTERACTOR_ISREVIEWED; break;
-        case IsAutoFound: sql = Constants::INTERACTOR_ISAUTOFOUND; break;
-        case DoNotWarnDuplicated: sql = Constants::INTERACTOR_WARNDUPLICATES; break;
-        case TranslatedLabel:
-        {
-            switch (QLocale().language()) {
-            case QLocale::French: sql = Constants::INTERACTOR_FR; break;
-            case QLocale::English: sql = Constants::INTERACTOR_EN; break;
-            case QLocale::German: sql = Constants::INTERACTOR_DE; break;
-            default: sql = Constants::INTERACTOR_EN; break;
-            }
-            break;
-        }
-        case EnLabel: sql = Constants::INTERACTOR_EN; break;
-        case FrLabel: sql = Constants::INTERACTOR_FR; break;
-        case DeLabel: sql = Constants::INTERACTOR_DE; break;
-        case ClassInformationFr: sql = Constants::INTERACTOR_INFO_FR; break;
-        case ClassInformationEn: sql = Constants::INTERACTOR_INFO_EN; break;
-        case ClassInformationDe: sql = Constants::INTERACTOR_INFO_DE; break;
-        case ATCCodeStringList: sql = Constants::INTERACTOR_ATC; break;
-        case DateOfCreation: sql = Constants::INTERACTOR_DATECREATE; break;
-        case DateLastUpdate: sql = Constants::INTERACTOR_DATEUPDATE; break;
-        case DateReview: sql = Constants::INTERACTOR_DATEREVIEW; break;
-        case PMIDStringList: sql = Constants::INTERACTOR_PMIDS; break;
-        case ChildrenUuid: sql = Constants::INTERACTOR_CHILDREN; break;
-        case Reference: sql = Constants::INTERACTOR_REF; break;
-        case Comment: sql = Constants::INTERACTOR_COMMENT; break;
-        };
-
+        int sql = d->sqlColumn(index);
         bool ok = false;
         QModelIndex sqlIndex = d->_sql->index(index.row(), sql);
 
