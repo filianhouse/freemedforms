@@ -254,7 +254,8 @@ const char * const WIKI_NOTE = \
 
 static void createNewWikiContent(const QStringList &dbUids, QMap<QChar, QString> &wikis, QString &wiki, QChar &current, int &nbCurrent)
 {
-    wiki.prepend(QString("====== Unreviewed components: %1 - Letter %2 ======\n\n\n"
+    wiki.prepend(QString("~~NOCACHE~~ \n"
+                         "====== Unreviewed components: %1 - Letter %2 ======\n\n\n"
                          "  * Number of unreviewed components: %3\n"
                          "  * Date of report generation : %4"
                          "\n\n"
@@ -360,6 +361,8 @@ void ComponentAtcEditorWidget::onCreateUnreviewedFileRequested()
         search += QString("\n    * [[%1|Search Google]]").arg(QString("http://www.google.fr/search?rls=en&q=%1+atc&ie=UTF-8&oe=UTF-8&redir_esc=").arg(ur.name.toUpper()));
         search += QString("\n    * [[%1|Search WHO ATC index]]").arg(QString("http://www.whocc.no/atc_ddd_index/?name=%1").arg(Utils::removeAccents(ur.name.toUpper())));
         search += QString("\n    * [[%1|Search RESIP]]").arg(QString("http://www.portailmedicaments.resip.fr/bcb_recherche/classes.asp?cc=1"));
+        search += QString("\n    * [[%1|Search WikiPedia (En)]]").arg(QString("http://en.wikipedia.org/wiki/%1").arg(Utils::firstLetterUpperCase(Utils::removeAccents(ur.name.toLower()))));
+        search += QString("\n    * [[%1|Search vidal.fr]]").arg(QString("http://www.vidal.fr/recherche/index/q:%1/").arg(Utils::removeAccents(ur.name.toLower())));
 
         wiki += QString("===== %1 =====\n\n"
                         "  * Name: %2\n"
