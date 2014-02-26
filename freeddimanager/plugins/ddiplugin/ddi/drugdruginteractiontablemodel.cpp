@@ -395,6 +395,8 @@ bool DrugDrugInteractionTableModel::setData(const QModelIndex &index, const QVar
 
         return ok;
     }
+
+    // TODO: manage CheckStateRole
     return false;
 }
 
