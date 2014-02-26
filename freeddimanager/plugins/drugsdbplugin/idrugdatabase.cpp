@@ -804,7 +804,11 @@ QHash<int, QString> IDrugDatabase::saveMoleculeIds(const QStringList &molnames)
  */
 bool IDrugDatabase::addAtc()
 {
-    return _databasePopulator->saveAtcClassification(_database);
+    Q_EMIT progressRangeChanged(0, 1);
+    Q_EMIT progressLabelChanged(tr("Adding ATC classification to database."));
+    Q_EMIT progress(0);
+    bool ok = _databasePopulator->saveAtcClassification(_database);
+    return ok;
 }
 
 /**
@@ -813,7 +817,11 @@ bool IDrugDatabase::addAtc()
  */
 bool IDrugDatabase::addDrugDrugInteractions()
 {
-    return _databasePopulator->saveDrugDrugInteractions(_database);
+    Q_EMIT progressRangeChanged(0, 1);
+    Q_EMIT progressLabelChanged(tr("Adding ATC classification to database."));
+    Q_EMIT progress(0);
+    bool ok = _databasePopulator->saveDrugDrugInteractions(_database);
+    return ok;
 }
 
 /**
