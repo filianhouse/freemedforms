@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>631</width>
+    <width>665</width>
     <height>600</height>
    </rect>
   </property>
@@ -217,6 +217,9 @@
        </item>
        <item row="3" column="0" colspan="2">
         <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <item>
+          <widget class="QLineEdit" name="uid"/>
+         </item>
          <item>
           <widget class="QLineEdit" name="reference">
            <property name="sizePolicy">

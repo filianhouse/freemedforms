@@ -46,6 +46,7 @@
 using namespace DDI;
 using namespace Internal;
 
+static inline DDI::DDICore *ddiCore() {return DDI::DDICore::instance();}
 static inline DDI::Internal::DDIDatabase &ddiBase() {return DDI::DDICore::instance()->database();}
 
 namespace DDI {
@@ -207,13 +208,21 @@ QVariant DrugInteractorTableModel::data(const QModelIndex &index, int role) cons
         QModelIndex childIndex = d->_sql->index(index.row(), Constants::INTERACTOR_CHILDREN);
         //QModelIndex atcIndex = d->_sql->index(index.row(), Constants::INTERACTOR_ATC);
         bool isClass = d->_sql->data(classIndex).toBool();
-        const QVariant &children = d->_sql->data(childIndex);
+        const QVariant &children = d->_sql->data(childIndex); // list ; seperated
         //const QVariant &atc = d->_sql->data(atcIndex);
 
         if (isClass) {
             // Class without children?
             if (children.isNull())
                 return QColor(255,50,50,150);
+
+            // Children all exist
+            const QStringList &list = children.toString().split(";", QString::SkipEmptyParts);
+            foreach(const QString &child, list) {
+                if (!ddiCore()->drugInteractorTableModel()->interactorUidExists(child))
+                    return QColor(255,50,50,150);
+            }
+
         } else {
             // Children without being a class?
             if (!children.isNull()) {

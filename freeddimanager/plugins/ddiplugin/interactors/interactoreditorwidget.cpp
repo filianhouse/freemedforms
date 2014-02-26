@@ -278,6 +278,7 @@ public:
         _mapper->addMapping(ui->enLabel, DrugInteractorTableModel::EnLabel, "text");
         _mapper->addMapping(ui->deLabel, DrugInteractorTableModel::DeLabel, "text");
         _mapper->addMapping(ui->reference, DrugInteractorTableModel::Reference, "text");
+        _mapper->addMapping(ui->uid, DrugInteractorTableModel::Uuid, "text");
 
         _mapper->addMapping(ui->classInfoFr, DrugInteractorTableModel::ClassInformationFr, "plainText");
         _mapper->addMapping(ui->classInfoEn, DrugInteractorTableModel::ClassInformationEn, "plainText");
@@ -376,6 +377,7 @@ void InteractorEditorWidget::onCoreDatabaseChanged()
 /** Enabled/Disabled the editor */
 void InteractorEditorWidget::setEditorsEnabled(bool state)
 {
+    d->ui->uid->setEnabled(state);
     d->ui->atcTableView->setEnabled(state);
     d->ui->classChildrenTableView->setEnabled(state);
     d->ui->dateCreation->setEnabled(state);
@@ -561,6 +563,14 @@ void InteractorEditorWidget::interactorActivated(const QModelIndex &index)
         if (children.data().isNull()) {
             msg += tr("Item is a class but does not own any child");
         }
+
+        // Children all exist
+        const QStringList &list = children.data().toString().split(";", QString::SkipEmptyParts);
+        foreach(const QString &child, list) {
+            if (!ddiCore()->drugInteractorTableModel()->interactorUidExists(child))
+                msg += tr("Child interactor %1 does not exist").arg(child);
+        }
+
     } else {
         // No ATC link?
         QModelIndex atc = ddiCore()->drugInteractorTableModel()->index(d->m_EditingIndex.row(), DrugInteractorTableModel::ATCCodeStringList);
