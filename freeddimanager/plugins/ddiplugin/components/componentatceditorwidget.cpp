@@ -352,7 +352,7 @@ void ComponentAtcEditorWidget::onCreateUnreviewedFileRequested()
         // Create ATC links
         QString atc;
         foreach(const QString &code, ur.suggested)
-            atc += QString("\n    * [[http://http://www.whocc.no/atc_ddd_index/?code=%1|%1]]").arg(code);
+            atc += QString("\n    * [[http://www.whocc.no/atc_ddd_index/?code=%1|%1]]").arg(code);
 
         // Create component search links
         // TODO: improve this for foreign drug database (we don't need CNAMTS links)
@@ -365,8 +365,8 @@ void ComponentAtcEditorWidget::onCreateUnreviewedFileRequested()
         search += QString("\n    * [[%1|Search vidal.fr]]").arg(QString("http://www.vidal.fr/recherche/index/q:%1/").arg(Utils::removeAccents(ur.name.toLower())));
 
         wiki += QString("===== %1 =====\n\n"
-                        "  * Name: %2\n"
-                        "  * Suggested ATC codes: %3\n"
+                        "  * Your proposal: \n"
+                        "  * Suggested ATC codes: %2\n"
                         "  * Comment: %3\n"
                         "  * Suggested search links: %4\n"
                         "\n\n")
