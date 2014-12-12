@@ -5,13 +5,13 @@
     <name>DataPack::Internal::HttpServerEngine</name>
     <message>
         <location filename="../../libs/datapackutils/serverengines/httpserverengine.cpp" line="244"/>
-        <source>Abort</source>
+        <source>Annulla</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../libs/datapackutils/serverengines/httpserverengine.cpp" line="296"/>
-        <source>Server %1
-requires an authentication</source>
+        <source>il Server %1
+richiede autenticazione</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -21,49 +21,49 @@ requires an authentication</source>
     </message>
     <message>
         <location filename="../../libs/datapackutils/serverengines/httpserverengine.cpp" line="326"/>
-        <source>Proxy authentication required</source>
+        <source>autenticazione Proxy richiesta</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../libs/datapackutils/serverengines/httpserverengine.cpp" line="355"/>
         <location filename="../../libs/datapackutils/serverengines/httpserverengine.cpp" line="356"/>
-        <source>Server error: %1</source>
+        <source>Errore del Server: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../libs/datapackutils/serverengines/httpserverengine.cpp" line="459"/>
-        <source>Server description file successfully downloaded.</source>
+        <source>File di descrizione del server scaricata.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../libs/datapackutils/serverengines/httpserverengine.cpp" line="475"/>
-        <source>Server description file is not readable.</source>
+        <source>File di descrizione del server non leggibile.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../libs/datapackutils/serverengines/httpserverengine.cpp" line="486"/>
-        <source>Server description file can not be unzipped.</source>
+        <source>File di descrizione del server non estraibile.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../libs/datapackutils/serverengines/httpserverengine.cpp" line="516"/>
         <location filename="../../libs/datapackutils/serverengines/httpserverengine.cpp" line="517"/>
-        <source>Adding pack description file to the download queue.</source>
+        <source>Aggiungi il pacchetto di file di descrizione al download.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../libs/datapackutils/serverengines/httpserverengine.cpp" line="536"/>
-        <source>Pack description successfully downloaded.</source>
+        <source>Pacchetto di descrizione scaricato.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../libs/datapackutils/serverengines/httpserverengine.cpp" line="543"/>
-        <source>Pack successfully downloaded.</source>
+        <source>Pacchetto scaricato.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../libs/datapackutils/serverengines/httpserverengine.cpp" line="566"/>
-        <source>Pack file can not be created in the persistent cache.</source>
+        <source>Il pacchetto non può essere creato nella cache esistente.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -71,22 +71,22 @@ requires an authentication</source>
     <name>DataPack::Internal::LocalServerEngine</name>
     <message>
         <location filename="../../libs/datapackutils/serverengines/localserverengine.cpp" line="90"/>
-        <source>Server configuration can be downloaded. Path: %1</source>
+        <source>La configurazione del server può essere scaricata. Percorso: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../libs/datapackutils/serverengines/localserverengine.cpp" line="115"/>
-        <source>Server configuration successfully downloaded.</source>
+        <source>Configurazione del server scaricata con successo.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../libs/datapackutils/serverengines/localserverengine.cpp" line="140"/>
-        <source>Pack successfully downloaded.</source>
+        <source>Pacchetto scaricato con successo.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../libs/datapackutils/serverengines/localserverengine.cpp" line="152"/>
-        <source>Pack file does not exist.</source>
+        <source>Il Pacchetto files non esiste.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -94,7 +94,7 @@ requires an authentication</source>
     <name>DataPack::Internal::PackDownloadPage</name>
     <message>
         <location filename="../../libs/datapackutils/widgets/packwizard.cpp" line="350"/>
-        <source>Downloading packs</source>
+        <source>Sto scaricando i pacchetti</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
